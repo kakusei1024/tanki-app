@@ -1417,6 +1417,7 @@ migrateBookModes();
 if(currentBook<0||currentBook>=books.length)currentBook=0;
 
 let cards=[],index=0,answerVisible=false,qType="wm",auto=false,autoTimer=null,answerTimer=null,prevStep=1,nextStep=1,currentScreen="home";
+let studyReturnScreen="range";
 let randomOrder=false;
 let studyRecords=JSON.parse(localStorage.getItem("studyRecords")||"{}");
 let currentStudyDate=todayKey();
@@ -1576,7 +1577,7 @@ function go(id){
 
 function backAction(){
   if(currentScreen==="edit")go("register");
-  else if(currentScreen==="study")go("range");
+  else if(currentScreen==="study")go(studyReturnScreen||"range");
   else if(currentScreen==="testPlay"||currentScreen==="testResult")go("testSetup");
   else if(currentScreen==="records")go("settings");
   else go("home");
@@ -1927,6 +1928,7 @@ function quickStart(){
     $("autoSwitch").checked=false;
 
     stopStudy();
+    studyReturnScreen="home";
     go("study");
     updateModeUI();
     render();
@@ -1941,6 +1943,7 @@ function quickStart(){
   $("startNum").value=1;
   $("endNum").value=baseCards().length;
   startRange();
+  studyReturnScreen="home";
 }
 
 function startRange(){
@@ -1951,6 +1954,7 @@ function startRange(){
 
   let s=Number($("startNum").value),e=Number($("endNum").value),a=Math.min(s,e),b=Math.max(s,e);
   stopStudy();
+  studyReturnScreen="range";
   cards=baseCards().slice(a-1,b);
   if(randomOrder)cards=shuffleArray(cards);
   index=0;
@@ -2284,4 +2288,42 @@ function updateRandomButtonUI(){
 
 </script>
 </body>
-</html>
+</html><!-- v22.17: 単語帳一覧カード幅だけを約半分に調整 -->
+<style>
+/* 単語登録画面の一覧カード本体だけ狭くする。機能・JSは変更なし */
+#register .bookArea{
+  max-width:520px !important;
+  grid-template-columns:110px minmax(0,340px) !important;
+  justify-content:center !important;
+}
+
+#register .bookArea .bookList{
+  width:100% !important;
+  max-width:340px !important;
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+
+#register .bookItem,
+#register .bookItem.selected{
+  width:100% !important;
+  max-width:340px !important;
+}
+
+@media (max-width:600px){
+  #register .bookArea{
+    max-width:100% !important;
+    align-items:center !important;
+  }
+  #register .bookArea .bookList{
+    width:52% !important;
+    max-width:260px !important;
+    min-width:190px !important;
+  }
+  #register .bookItem,
+  #register .bookItem.selected{
+    width:100% !important;
+    max-width:100% !important;
+  }
+}
+</style>
