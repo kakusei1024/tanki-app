@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>単語帳アプリ</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1194,6 +1194,269 @@ body.light .rowColorDot.active{
   }
 }
 
+
+
+/* v23: iPhoneダブルタップズーム対策＋学習画面コンパクト化 */
+*{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.word{
+  font-size:clamp(42px, 13vw, 56px) !important;
+  line-height:1.02 !important;
+  word-break:break-word !important;
+  overflow-wrap:anywhere !important;
+}
+.answer{
+  font-size:clamp(24px, 7.5vw, 34px) !important;
+  line-height:1.15 !important;
+  margin-top:14px !important;
+}
+
+@media (max-width:600px){
+  #study .modeSwitch{
+    margin:6px 0 8px !important;
+    gap:10px !important;
+  }
+  #study .card.studyCard{
+    min-height:210px !important;
+    padding:18px !important;
+    border-radius:24px !important;
+  }
+  #study .pageInfo{
+    margin-bottom:10px !important;
+  }
+  #study .mainControl{
+    margin:12px 0 !important;
+  }
+  #study .circle{
+    width:82px !important;
+    height:82px !important;
+    font-size:18px !important;
+  }
+  #study .studySideControls{
+    gap:10px !important;
+    margin:8px 0 !important;
+  }
+  #study .sideStepBox{
+    padding:10px !important;
+    border-radius:16px !important;
+  }
+  #study .sideStepBox button{
+    height:32px !important;
+    padding:0 10px !important;
+    font-size:13px !important;
+    border-radius:14px !important;
+  }
+  #study .sideStepNum{
+    font-size:20px !important;
+    margin:0 8px !important;
+  }
+  #study .moveRow{
+    gap:10px !important;
+    margin-top:8px !important;
+  }
+  #study .moveRow button{
+    height:44px !important;
+    border-radius:14px !important;
+    font-size:20px !important;
+  }
+  #study .sliders{
+    gap:10px !important;
+    margin-top:14px !important;
+  }
+  #study .sliderBox{
+    padding:12px !important;
+    border-radius:16px !important;
+  }
+  #study .sliderBox label{
+    font-size:12px !important;
+  }
+  #study .sliderBox div{
+    margin:4px 0 !important;
+    font-size:18px !important;
+  }
+}
+
+/* v23: 品詞に普通の動詞を追加 */
+
+/* v24 stronger compact: iPhone tap/zoom対策 */
+*{
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+
+/* v24 stronger compact: 学習画面をかなりコンパクト化 */
+#study .modeSwitch{
+  margin:4px 0 6px !important;
+  gap:8px !important;
+  font-size:13px !important;
+}
+
+#study .switch{
+  width:60px !important;
+  height:30px !important;
+}
+#study .slider:before{
+  width:22px !important;
+  height:22px !important;
+  left:4px !important;
+  top:4px !important;
+}
+#study .switch input:checked+.slider:before{
+  transform:translateX(30px) !important;
+}
+
+#study .studyCard{
+  min-height:170px !important;
+  padding:16px 14px !important;
+  border-radius:22px !important;
+}
+
+#study .pageInfo{
+  margin-bottom:8px !important;
+  font-size:13px !important;
+}
+
+#study .word{
+  font-size:38px !important;
+  line-height:1.08 !important;
+  word-break:break-word !important;
+  overflow-wrap:anywhere !important;
+}
+
+#study .answer{
+  font-size:24px !important;
+  line-height:1.18 !important;
+  min-height:30px !important;
+  margin-top:12px !important;
+  word-break:break-word !important;
+  overflow-wrap:anywhere !important;
+}
+
+#study .posBadge{
+  min-width:20px !important;
+  height:20px !important;
+  font-size:11px !important;
+  padding:0 5px !important;
+  transform:translateY(2px) !important;
+}
+
+#study .mainControl{
+  margin:10px 0 !important;
+}
+
+#study .circle{
+  width:72px !important;
+  height:72px !important;
+  font-size:16px !important;
+}
+
+#study .studySideControls{
+  gap:8px !important;
+  margin:8px 0 6px !important;
+}
+
+#study .sideStepBox{
+  padding:8px !important;
+  border-radius:14px !important;
+}
+
+#study .sideStepBox br{
+  display:none !important;
+}
+
+#study .sideStepBox button{
+  height:30px !important;
+  min-width:34px !important;
+  padding:0 8px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+
+#study .sideStepNum{
+  font-size:18px !important;
+  margin:0 6px !important;
+}
+
+#study .moveRow{
+  gap:8px !important;
+  margin-top:6px !important;
+}
+
+#study .moveRow button{
+  height:42px !important;
+  border-radius:14px !important;
+  font-size:18px !important;
+}
+
+#study .sliders{
+  gap:8px !important;
+  margin-top:10px !important;
+}
+
+#study .sliderBox{
+  padding:9px !important;
+  border-radius:14px !important;
+}
+
+#study .sliderBox label{
+  font-size:11px !important;
+}
+
+#study .sliderBox div{
+  font-size:13px !important;
+  margin:3px 0 !important;
+}
+
+#study .sliderBox input{
+  height:22px !important;
+}
+
+/* 他画面に影響しすぎない範囲でボタン少し低く */
+#study button{
+  max-height:72px !important;
+}
+
+/* 小さいスマホではさらに圧縮 */
+@media (max-width:430px){
+  .app{
+    padding-top:14px !important;
+  }
+  .top{
+    height:36px !important;
+  }
+  #study .studyCard{
+    min-height:155px !important;
+    padding:14px 12px !important;
+  }
+  #study .word{
+    font-size:34px !important;
+  }
+  #study .answer{
+    font-size:22px !important;
+  }
+  #study .circle{
+    width:66px !important;
+    height:66px !important;
+    font-size:15px !important;
+  }
+  #study .sideStepBox{
+    padding:7px !important;
+  }
+  #study .sideStepBox button{
+    height:28px !important;
+    font-size:11px !important;
+  }
+  #study .moveRow button{
+    height:38px !important;
+  }
+  #study .sliderBox{
+    padding:8px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1428,9 +1691,9 @@ const $=id=>document.getElementById(id);
 if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
 
 const BOOK_MODES={
-  english:{name:"英語",tagMap:{"自動詞":"自","他動詞":"他","名詞":"名","形容詞":"形","副詞":"副","副詞節":"副","熟語":"熟","句動詞":"句","前置詞":"前","接続詞":"接"}},
-  kobun:{name:"古文",tagMap:{"自動詞":"動","他動詞":"活","名詞":"名","形容詞":"形","副詞":"副","副詞節":"助","熟語":"敬","句動詞":"枕","前置詞":"係","接続詞":"接"}},
-  kanbun:{name:"漢文",tagMap:{"自動詞":"句","他動詞":"再","名詞":"漢","形容詞":"読","副詞":"否","副詞節":"使","熟語":"重","句動詞":"返","前置詞":"置","接続詞":"接"}}
+  english:{name:"英語",tagMap:{"動詞":"動","自動詞":"自","他動詞":"他","名詞":"名","形容詞":"形","副詞":"副","副詞節":"副","熟語":"熟","句動詞":"句","前置詞":"前","接続詞":"接"}},
+  kobun:{name:"古文",tagMap:{"動詞":"動","自動詞":"自","他動詞":"活","名詞":"名","形容詞":"形","副詞":"副","副詞節":"助","熟語":"敬","句動詞":"枕","前置詞":"係","接続詞":"接"}},
+  kanbun:{name:"漢文",tagMap:{"動詞":"動","自動詞":"句","他動詞":"再","名詞":"漢","形容詞":"読","副詞":"否","副詞節":"使","熟語":"重","句動詞":"返","前置詞":"置","接続詞":"接"}}
 };
 
 function currentBookMode(){return books[currentBook]?.mode||"english";}
@@ -1440,6 +1703,7 @@ function tagShortByMode(pos,mode=currentBookMode()){
   if(!pos)return "";
   const map=BOOK_MODES[mode]?.tagMap||BOOK_MODES.english.tagMap;
   if(map[pos])return map[pos];
+  if(pos==="動"||pos==="動詞"||pos.toLowerCase()==="verb")return map["動詞"]||"動";
   if(pos==="自"||pos.includes("自動詞")||pos.toLowerCase()==="vi")return map["自動詞"]||"自";
   if(pos==="他"||pos.includes("他動詞")||pos.toLowerCase()==="vt")return map["他動詞"]||"他";
   if(pos==="名"||pos.includes("名詞")||pos.toLowerCase()==="noun")return map["名詞"]||"名";
@@ -1797,6 +2061,7 @@ function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563"}){
     <div class="label">品詞</div>
     <select class="p">
       <option value="">品詞を選択しない</option>
+      <option>動詞</option>
       <option>自動詞</option>
       <option>他動詞</option>
       <option>名詞</option>
