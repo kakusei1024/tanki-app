@@ -1057,6 +1057,143 @@ body.light .rowColorDot.active{
   background:#4b5563 !important;
 }
 
+
+
+/* stable-v22.9: 単語帳一覧の編集/削除を下段に完全独立 */
+.bookList{
+  width:min(92vw,680px) !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  overflow:visible !important;
+}
+
+.bookItem{
+  display:block !important;
+  position:relative !important;
+  min-height:auto !important;
+  padding:14px 16px 14px !important;
+  margin-bottom:12px !important;
+  overflow:visible !important;
+}
+
+.bookItem.selected{
+  padding:14px 16px 14px !important;
+  margin-top:0 !important;
+  overflow:visible !important;
+}
+
+.bookItem > div:first-child{
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-width:0 !important;
+}
+
+.bookItem > div:first-child span:first-child{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.bookItem .tools{
+  position:static !important;
+  transform:none !important;
+  width:100% !important;
+  margin-top:12px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:10px !important;
+}
+
+.bookItem .tools button,
+.tools .bookEditBtn,
+.tools .bookDeleteBtn{
+  width:auto !important;
+  min-width:54px !important;
+  height:28px !important;
+  padding:0 10px !important;
+  border-radius:11px !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  flex:0 0 auto !important;
+}
+
+/* 以前の:first-child/:last-child疑似文字が二重表示にならないよう停止 */
+.bookItem .tools button::after{
+  content:none !important;
+}
+
+/* 一覧画面だけ過剰に縦長化しない */
+#pickBook .center,
+#register .center{
+  justify-content:center !important;
+  min-height:calc(100vh - 190px) !important;
+}
+
+
+
+/* stable-v22.10: スマホで単語帳カードをはみ出させず、編集/削除は下段固定 */
+.bookArea{
+  width:100% !important;
+  max-width:760px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+.bookArea .bookList{
+  width:100% !important;
+  min-width:0 !important;
+}
+.bookItem{
+  cursor:pointer !important;
+}
+.bookItem .tools{
+  clear:both !important;
+}
+@media (max-width:600px){
+  .app{
+    padding-left:18px !important;
+    padding-right:18px !important;
+  }
+  .bookArea{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    gap:16px !important;
+    margin-top:24px !important;
+  }
+  .bookArea .plus{
+    align-self:center !important;
+    width:96px !important;
+    height:96px !important;
+    flex:0 0 auto !important;
+  }
+  .bookList{
+    width:100% !important;
+    max-width:100% !important;
+    margin-top:0 !important;
+  }
+  .bookItem,
+  .bookItem.selected{
+    width:100% !important;
+    max-width:100% !important;
+    display:block !important;
+    padding:14px 14px 12px !important;
+  }
+  .bookItem .tools{
+    width:100% !important;
+    margin-top:12px !important;
+    padding-top:0 !important;
+    display:flex !important;
+    justify-content:flex-end !important;
+    gap:10px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1180,7 +1317,6 @@ body.light .rowColorDot.active{
 </section>
 
 <section id="edit" class="screen">
-  <div style="display:flex;justify-content:flex-end"><button class="icon" onclick="go('register')">×</button></div>
   <div class="card editor">
     <h2>単語編集</h2>
     <div class="label">単語帳タイトル</div>
@@ -1497,7 +1633,7 @@ function updateBookLists(){
             go("home");
           },350);
         }else{
-          openEditor();
+          updateBookLists();
         }
       };
 
