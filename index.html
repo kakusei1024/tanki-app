@@ -1615,6 +1615,25 @@ body.light .sampleMenuBox{
   padding-left:0 !important;
 }
 
+
+/* test no-repeat middle button */
+.testModeRow{
+  display:grid !important;
+  grid-template-columns:1fr 1fr 1fr !important;
+  gap:8px !important;
+  width:100% !important;
+  max-width:330px !important;
+}
+.testModeRow .pill{
+  min-width:0 !important;
+  width:100% !important;
+  height:44px !important;
+  border-radius:22px !important;
+  padding:0 6px !important;
+  font-size:13px !important;
+  white-space:nowrap !important;
+}
+
 </style>
 </head>
 <body>
@@ -2399,7 +2418,7 @@ function syncTestCountOptions(){
   let b=Math.max(s,e);
 
   let rangeCount=b-a+1;
-  let max=Math.min(rangeCount,maxCards);
+  let max=Math.min(rangeCount,maxCards,10);
 
   for(let n=1;n<=max;n++){
     let o=document.createElement("option");
@@ -2988,33 +3007,35 @@ function stopStudy(){
 }
 
 function startTest(){
-  const candidates=testCandidateCards();
+  const rangeCards=getRangeCardsForTest();
 
-  if(!candidates.length){
+  if(!rangeCards.length){
     alert("出題できる単語がありません");
     return;
   }
 
-  let s=Number($("testStart").value||1);
-  let e=Number($("testEnd").value||candidates.length);
-  let a=Math.min(s,e);
-  let b=Math.max(s,e);
+  let candidates=testCandidateCards();
 
-  let rangeCards=candidates.slice(a-1,b);
+  if(testNoPrev && candidates.length===0){
+    openTestAllDoneModal();
+    return;
+  }
 
-  if(!rangeCards.length){
-    rangeCards=candidates;
+  if(!candidates.length){
+    candidates=rangeCards;
   }
 
   let count=Number($("testCount").value||1);
-  count=Math.min(Math.max(1,count),10,rangeCards.length);
+  count=Math.min(Math.max(1,count),10,candidates.length);
 
-  testCards=shuffleArray(rangeCards).slice(0,count);
+  testCards=shuffleArray(candidates).slice(0,count);
   testIndex=0;
   testScore=0;
   testResults=[];
 
-  saveLastTestKeys(testCards.map(cardKey));
+  /* VA: テスト開始時点で、前回なしON/OFF関係なく選択範囲の出題分を記憶 */
+  const used=getUsedTestKeys();
+  setUsedTestKeys([...used,...testCards.map(cardKey)]);
 
   go("testPlay");
   renderTest();
@@ -3363,6 +3384,113 @@ setTimeout(()=>{
     noticeBtn.classList.toggle("noticeHidden", currentScreen!=="home");
   }
 },120);
+
+
+/* smart no-repeat test system */
+function testRangeKey(){
+  const s=Number($("testStart")?.value||1);
+  const e=Number($("testEnd")?.value||baseCards().length||1);
+  const a=Math.min(s,e);
+  const b=Math.max(s,e);
+  return `book:${currentBook}|type:${testQType}|range:${a}-${b}`;
+}
+
+function cardKey(c){
+  return String(c.word||"")+"|||"+String(c.answer||"")+"|||"+String(c.pos||"");
+}
+
+function getUsedTestKeys(){
+  try{
+    const all=JSON.parse(localStorage.getItem("usedTestKeysByRange")||"{}");
+    return Array.isArray(all[testRangeKey()]) ? all[testRangeKey()] : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function setUsedTestKeys(list){
+  try{
+    const all=JSON.parse(localStorage.getItem("usedTestKeysByRange")||"{}");
+    all[testRangeKey()]=Array.from(new Set(list||[]));
+    localStorage.setItem("usedTestKeysByRange",JSON.stringify(all));
+  }catch(e){}
+}
+
+function clearUsedTestKeys(){
+  try{
+    const all=JSON.parse(localStorage.getItem("usedTestKeysByRange")||"{}");
+    delete all[testRangeKey()];
+    localStorage.setItem("usedTestKeysByRange",JSON.stringify(all));
+  }catch(e){}
+}
+
+function getRangeCardsForTest(){
+  const list=baseCards();
+  if(!list.length)return [];
+
+  const s=Number($("testStart")?.value||1);
+  const e=Number($("testEnd")?.value||list.length);
+  const a=Math.min(s,e);
+  const b=Math.max(s,e);
+
+  return list.slice(a-1,b);
+}
+
+function testCandidateCards(){
+  const rangeCards=getRangeCardsForTest();
+
+  if(!testNoPrev)return rangeCards;
+
+  const used=new Set(getUsedTestKeys());
+  const filtered=rangeCards.filter(c=>!used.has(cardKey(c)));
+
+  return filtered;
+}
+
+function openTestAllDoneModal(){
+  const old=document.getElementById("testAllDoneModal");
+  if(old)old.remove();
+
+  const modal=document.createElement("div");
+  modal.id="testAllDoneModal";
+  modal.className="sampleMenuOverlay";
+  modal.innerHTML=`
+    <div class="sampleMenuBox">
+      <h2>全部出ました</h2>
+      <div style="text-align:left;line-height:1.7;font-size:14px;margin:14px 0 18px">
+        選択した範囲の単語はすべて出題済みです。<br>
+        記録をリセットして、また最初から出題しますか？
+      </div>
+      <button type="button" class="blue sampleCancelBtn" onclick="restartNoPrevTest()">最初からやる</button>
+      <button type="button" class="dark sampleCancelBtn" style="margin-top:10px" onclick="closeTestAllDoneModal()">戻る</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeTestAllDoneModal(){
+  const modal=document.getElementById("testAllDoneModal");
+  if(modal)modal.remove();
+}
+
+function restartNoPrevTest(){
+  clearUsedTestKeys();
+  closeTestAllDoneModal();
+  startTest();
+}
+
+function toggleTestNoPrev(){
+  testNoPrev=!testNoPrev;
+  updateTestModeButtons();
+  syncTestCountOptions();
+}
+
+function updateTestModeButtons(){
+  if(!$("testWmBtn")||!$("testMwBtn"))return;
+  $("testWmBtn").className=testQType==="wm"?"pill blue":"pill dark";
+  $("testMwBtn").className=testQType==="mw"?"pill blue":"pill dark";
+  if($("testNoPrevBtn"))$("testNoPrevBtn").className=testNoPrev?"pill blue":"pill dark";
+}
 
 </script>
 </body>
