@@ -1731,7 +1731,7 @@ body.light .sampleMenuBox{
 
       <div class="testCountBlock">
         <div class="label">問題数</div>
-        <select id="testCount" class="testCountSelect"></select>
+        <select id="testCount" class="testCountSelect" onchange="rememberTestDesiredCount()"></select>
       </div>
 
       <button class="big blue setupStartBtn" onclick="startTest()">テスト開始</button>
@@ -2105,7 +2105,7 @@ let randomOrder=false;
 let studyRecords=JSON.parse(localStorage.getItem("studyRecords")||"{}");
 let currentStudyDate=todayKey();
 let studySeconds=Number(studyRecords[currentStudyDate]||0),studyTimer=null,studying=false;
-let testCards=[],testIndex=0,testScore=0,testQType="wm",testResults=[],testNoPrev=false;
+let testCards=[],testIndex=0,testScore=0,testQType="wm",testResults=[],testNoPrev=false,testDesiredCount=10;
 const $=id=>document.getElementById(id);
 
 if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
@@ -2400,26 +2400,21 @@ function syncTestCountOptions(){
   let tc=$("testCount");
   if(!tc)return;
 
-  let maxCards=testCandidateCards().length;
+  const oldDesired = Number(testDesiredCount || tc.value || 10);
+  let maxCards = getTestOptionBaseCount();
 
   tc.innerHTML="";
 
-  if(maxCards===0){
+  if(maxCards<=0){
     let o=document.createElement("option");
     o.value=0;
     o.textContent="0問";
     tc.appendChild(o);
+    testDesiredCount=0;
     return;
   }
 
-  let s=Number($("testStart").value||1);
-  let e=Number($("testEnd").value||maxCards);
-
-  let a=Math.min(s,e);
-  let b=Math.max(s,e);
-
-  let rangeCount=b-a+1;
-  let max=Math.min(rangeCount,maxCards,10);
+  let max=Math.min(maxCards,10);
 
   for(let n=1;n<=max;n++){
     let o=document.createElement("option");
@@ -2428,8 +2423,11 @@ function syncTestCountOptions(){
     tc.appendChild(o);
   }
 
-  tc.value=Math.min(10,max);
+  const nextValue=Math.min(Math.max(1,oldDesired||10),max);
+  tc.value=nextValue;
+  testDesiredCount=nextValue;
 }
+
 
 function newBook(){
   go("bookModePick");
@@ -3026,7 +3024,8 @@ function startTest(){
     candidates=rangeCards;
   }
 
-  let count=Number($("testCount").value||1);
+  rememberTestDesiredCount();
+  let count=Number(testDesiredCount || $("testCount").value || 1);
   count=Math.min(Math.max(1,count),10,candidates.length);
 
   testCards=shuffleArray(candidates).slice(0,count);
@@ -3475,9 +3474,15 @@ function closeTestAllDoneModal(){
 }
 
 function restartNoPrevTest(){
+  const keepCount=Number(testDesiredCount || $("testCount")?.value || 10);
   clearUsedTestKeys();
   closeTestAllDoneModal();
-  startTest();
+  syncTestCountOptions();
+  if($("testCount")){
+    $("testCount").value=Math.min(keepCount, Number($("testCount").lastElementChild?.value || keepCount));
+    rememberTestDesiredCount();
+  }
+  setTimeout(()=>startTest(),50);
 }
 
 function toggleTestNoPrev(){
@@ -3518,6 +3523,28 @@ function forceAppRefresh(){
     const base=location.origin + location.pathname;
     location.replace(base + "?refresh=" + Date.now());
   }
+}
+
+
+function rememberTestDesiredCount(){
+  const el=$("testCount");
+  if(!el)return;
+  const n=Number(el.value||testDesiredCount||10);
+  if(n>0)testDesiredCount=Math.min(10,n);
+}
+
+function getTestOptionBaseCount(){
+  const rangeCards=getRangeCardsForTest ? getRangeCardsForTest() : baseCards();
+  if(!testNoPrev)return rangeCards.length;
+
+  const candidates=testCandidateCards ? testCandidateCards() : rangeCards;
+
+  /* 前回なしで全部出し切っている時は、選択肢は範囲全体を基準に表示する */
+  if(candidates.length===0 && rangeCards.length>0){
+    return rangeCards.length;
+  }
+
+  return candidates.length;
 }
 
 </script>
