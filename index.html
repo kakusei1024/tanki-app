@@ -1840,6 +1840,7 @@ body.light .sampleMenuBox{
       <h1>設定</h1>
       <button class="big blue" id="themeBtn" onclick="toggleTheme()">ライトモードに変更</button>
       <button class="big dark" onclick="go('records')">学習記録</button>
+      <button class="big dark" onclick="forceAppRefresh()">最新版に更新</button>
       <button class="big dark" onclick="openBackupSaveGuide()">バックアップ保存</button>
       <button class="big dark" onclick="openBackupFilePicker()">バックアップ復元</button>
       <div class="future">今後追加予定</div>
@@ -3490,6 +3491,33 @@ function updateTestModeButtons(){
   $("testWmBtn").className=testQType==="wm"?"pill blue":"pill dark";
   $("testMwBtn").className=testQType==="mw"?"pill blue":"pill dark";
   if($("testNoPrevBtn"))$("testNoPrevBtn").className=testNoPrev?"pill blue":"pill dark";
+}
+
+
+function forceAppRefresh(){
+  if(!confirm("最新版を読み込み直しますか？\n登録した単語帳データは基本的に残ります。\n\n※ホーム画面追加版では、iPhone側のキャッシュにより必ず更新されるとは限りません。反映されない場合は、Safariで開き直すかホーム画面へ再追加してください。")){
+    return;
+  }
+
+  try{
+    if("caches" in window){
+      caches.keys().then(keys=>{
+        Promise.all(keys.map(key=>caches.delete(key))).finally(()=>{
+          const base=location.origin + location.pathname;
+          location.replace(base + "?refresh=" + Date.now());
+        });
+      }).catch(()=>{
+        const base=location.origin + location.pathname;
+        location.replace(base + "?refresh=" + Date.now());
+      });
+    }else{
+      const base=location.origin + location.pathname;
+      location.replace(base + "?refresh=" + Date.now());
+    }
+  }catch(e){
+    const base=location.origin + location.pathname;
+    location.replace(base + "?refresh=" + Date.now());
+  }
 }
 
 </script>
