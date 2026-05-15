@@ -1469,43 +1469,125 @@ button{
 }
 
 
-/* v26: 下ナビ選択中の青い部分を小さく調整 */
-.bottomNav .nav.active,
-.bottomNav .active,
-.bottomNav .current,
-.bottomNav .selected{
-  min-width:0 !important;
-  width:auto !important;
-  height:50px !important;
-  margin:10px 8px !important;
-  padding:0 10px !important;
-  border-radius:16px !important;
-  box-shadow:0 0 6px rgba(0,140,255,.12) !important;
-  transform:none !important;
+/* v28: サンプル語数をボタン選択に変更 */
+.sampleMenuOverlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(0,0,0,.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
 }
 
-/* スマホではさらに侵食しないサイズ */
-@media (max-width:600px){
-  .bottomNav{
-    padding:6px !important;
-    gap:4px !important;
-  }
-  .bottomNav .nav.active,
-  .bottomNav .active,
-  .bottomNav .current,
-  .bottomNav .selected{
-    height:48px !important;
-    margin:7px 4px !important;
-    padding:0 8px !important;
-    border-radius:15px !important;
-    min-width:0 !important;
-  }
-  .bottomNav .nav{
-    font-size:18px !important;
-  }
-  .bottomNav .nav span{
-    font-size:10px !important;
-  }
+.sampleMenuBox{
+  width:min(92vw,360px);
+  background:#2b2b2b;
+  color:white;
+  border-radius:24px;
+  padding:22px;
+  text-align:center;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+
+body.light .sampleMenuBox{
+  background:white;
+  color:#111;
+}
+
+.sampleMenuBox h2{
+  font-size:22px;
+  margin-bottom:10px;
+}
+
+.sampleMenuBox p{
+  font-size:14px;
+  line-height:1.6;
+  opacity:.85;
+  margin-bottom:18px;
+}
+
+.sampleMenuButtons{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.sampleMenuButtons button{
+  height:52px;
+  border-radius:16px;
+  padding:0;
+  font-size:16px;
+}
+
+.sampleCancelBtn{
+  width:100%;
+  height:48px;
+  border-radius:16px;
+}
+
+
+/* VA7.0.2 お知らせバッジ */
+.noticeWrap{
+  position:relative;
+}
+
+#noticeBadge{
+  position:absolute;
+  top:-2px;
+  right:-2px;
+  min-width:18px;
+  height:18px;
+  padding:0 4px;
+  border-radius:999px;
+  background:#ff3b30;
+  color:white;
+  font-size:11px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+
+#noticeBadge.hidden{
+  display:none;
+}
+
+
+/* VA7.0.3 テスト画面：前回なしボタン追加 */
+.testModeRow{
+  display:grid !important;
+  grid-template-columns:1fr 1fr 1fr !important;
+  gap:8px !important;
+  width:100% !important;
+  max-width:330px !important;
+}
+
+.testModeRow .pill{
+  min-width:0 !important;
+  width:100% !important;
+  height:44px !important;
+  border-radius:22px !important;
+  padding:0 6px !important;
+  font-size:13px !important;
+  white-space:nowrap !important;
+}
+
+
+/* VA internal: 上部タイトル非表示（重複防止） */
+#topTitle{
+  visibility:hidden !important;
+}
+
+
+.versionMini{
+  font-size:11px;
+  opacity:.55;
+  margin-top:3px;
+  font-weight:800;
 }
 
 </style>
@@ -1514,7 +1596,13 @@ button{
 <div class="app">
 
 <div class="top">
-  <button id="backBtn" class="icon back hidden" onclick="backAction()">‹</button>
+  <div style="display:flex;align-items:center;gap:6px">
+    <button id="backBtn" class="icon back hidden" onclick="backAction()">‹</button>
+    <button id="noticeBtn" class="icon noticeWrap" onclick="openNotice()">
+💬
+<span id="noticeBadge">1</span>
+</button>
+  </div>
   <div class="title" id="topTitle">単語登録</div>
   <button id="gearBtn" class="icon" onclick="go('settings')">⚙</button>
 </div>
@@ -1527,7 +1615,7 @@ button{
       <button class="big blue" onclick="quickStart()">クイックスタート</button>
     </div>
     <div class="stats">
-      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div></div>
+      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div><div id="homeVersionText" class="versionMini">Vr_a7.0.1</div></div>
       <div class="stat"><div class="statNum" id="studyTime">0分</div><div class="statLabel">学習時間</div></div>
     </div>
   </div>
@@ -1591,8 +1679,9 @@ button{
         <select id="testEnd" onchange="syncTestCountOptions()"></select>
       </div>
 
-      <div class="setupModeRow">
+      <div class="setupModeRow testModeRow">
         <button id="testWmBtn" class="pill blue" onclick="setTestQ('wm')">単→意</button>
+        <button id="testNoPrevBtn" class="pill dark" onclick="toggleTestNoPrev()">前回なし</button>
         <button id="testMwBtn" class="pill dark" onclick="setTestQ('mw')">意→単</button>
       </div>
 
@@ -1641,7 +1730,7 @@ button{
 
     <div class="grid2 editActions registerActions">
       <button class="blue" onclick="saveBook()">保存</button>
-      <button class="dark" onclick="loadSample()">サンプル</button>
+      <button class="dark" onclick="openSampleMenu()">サンプル</button>
     </div>
   </div>
 </section>
@@ -1707,13 +1796,15 @@ button{
       <h1>設定</h1>
       <button class="big blue" id="themeBtn" onclick="toggleTheme()">ライトモードに変更</button>
       <button class="big dark" onclick="go('records')">学習記録</button>
-      <button class="big dark" onclick="manualRestoreBooks()">バックアップ復元</button>
+      <button class="big dark" onclick="downloadBackup()">バックアップ保存</button>
+      <button class="big dark" onclick="openBackupFilePicker()">バックアップ復元</button>
       <div class="future">今後追加予定</div>
       <button class="big dark" onclick="go('home')">戻る</button>
     </div>
   </div>
 </section>
 
+  <input id="backupFileInput" type="file" accept=".json,application/json" style="display:none" onchange="restoreBackupFromFile(event)">
 </div>
 
 <div class="bottomNav" id="bottomNav">
@@ -1724,6 +1815,8 @@ button{
 </div>
 
 <script>
+const APP_VERSION = "Vr_a7.0.1";
+
 const DEFAULT_BOOKS=[{name:"新しい単語帳",mode:"english",cards:[{word:"apple",pos:"名詞",answer:"りんご"},{word:"book",pos:"名詞",answer:"本"}]}];
 
 function safeJsonParse(value,fallback){
@@ -1796,6 +1889,108 @@ function saveBooksWithBackup(data){
   }
 }
 
+
+function downloadBackup(){
+  try{
+    const data={
+      app:"単語帳アプリ",
+      version:"Vr_a7.0.1",
+      createdAt:new Date().toISOString(),
+      books:books,
+      currentBook:currentBook,
+      studyRecords:studyRecords
+    };
+
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const d=new Date();
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,"0");
+    const day=String(d.getDate()).padStart(2,"0");
+
+    a.href=url;
+    a.download=`tango_backup_${y}${m}${day}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    alert("バックアップを保存しました");
+  }catch(e){
+    alert("バックアップ保存に失敗しました");
+    console.error(e);
+  }
+}
+
+
+function openBackupFilePicker(){
+  const input=document.getElementById("backupFileInput");
+  if(!input){
+    alert("バックアップ読み込み機能が見つかりません");
+    return;
+  }
+  input.value="";
+  input.click();
+}
+
+function restoreBackupFromFile(event){
+  const file=event.target.files && event.target.files[0];
+  if(!file)return;
+
+  const reader=new FileReader();
+
+  reader.onload=function(){
+    try{
+      const data=JSON.parse(reader.result);
+
+      let nextBooks=null;
+      let nextCurrentBook=0;
+      let nextStudyRecords=null;
+
+      if(Array.isArray(data)){
+        nextBooks=data;
+      }else if(data && Array.isArray(data.books)){
+        nextBooks=data.books;
+        nextCurrentBook=Number(data.currentBook||0);
+        if(data.studyRecords && typeof data.studyRecords==="object"){
+          nextStudyRecords=data.studyRecords;
+        }
+      }
+
+      if(!isValidBooksData(nextBooks)){
+        alert("このバックアップファイルは読み込めません");
+        return;
+      }
+
+      if(!confirm("このバックアップから復元しますか？\n現在の単語帳データは置き換わります。")){
+        return;
+      }
+
+      books=nextBooks;
+      currentBook=Math.max(0,Math.min(nextCurrentBook,books.length-1));
+
+      if(nextStudyRecords){
+        studyRecords=nextStudyRecords;
+        localStorage.setItem("studyRecords",JSON.stringify(studyRecords));
+      }
+
+      saveBooksWithBackup(books);
+      localStorage.setItem("currentBook",currentBook);
+      save();
+      update();
+
+      alert("バックアップから復元しました");
+      go("home");
+    }catch(e){
+      alert("バックアップファイルの読み込みに失敗しました");
+      console.error(e);
+    }
+  };
+
+  reader.readAsText(file,"utf-8");
+}
+
 function manualRestoreBooks(){
   const backups=[
     safeJsonParse(localStorage.getItem("books_backup_latest"),null),
@@ -1830,7 +2025,7 @@ let randomOrder=false;
 let studyRecords=JSON.parse(localStorage.getItem("studyRecords")||"{}");
 let currentStudyDate=todayKey();
 let studySeconds=Number(studyRecords[currentStudyDate]||0),studyTimer=null,studying=false;
-let testCards=[],testIndex=0,testScore=0,testQType="wm",testResults=[];
+let testCards=[],testIndex=0,testScore=0,testQType="wm",testResults=[],testNoPrev=false;
 const $=id=>document.getElementById(id);
 
 if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
@@ -2121,7 +2316,7 @@ function syncTestCountOptions(){
   let tc=$("testCount");
   if(!tc)return;
 
-  let maxCards=baseCards().length;
+  let maxCards=testCandidateCards().length;
 
   tc.innerHTML="";
 
@@ -2243,6 +2438,150 @@ function selectRowColor(btn,color){
   if(main)main.style.background=color||"#4b5563";
 }
 
+
+
+
+function openNotice(){
+  const old=document.getElementById("noticeModal");
+  if(old)old.remove();
+
+  const modal=document.createElement("div");
+  modal.id="noticeModal";
+  modal.className="sampleMenuOverlay";
+  modal.innerHTML=`
+    <div class="sampleMenuBox">
+      <h2>お知らせ</h2>
+      <div style="text-align:left;line-height:1.7;font-size:14px;margin:14px 0 18px">
+        <div>・Vr_a7.0.1 サンプル追加機能改善</div>
+        <div>・Vr_a7.0.1 バックアップ機能追加</div>
+        <div>・Vr_a7.0.1 スマホUI最適化</div>
+      </div>
+      <button type="button" class="blue sampleCancelBtn" onclick="closeNotice()">閉じる</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeNotice(){
+  const modal=document.getElementById("noticeModal");
+  if(modal)modal.remove();
+}
+
+function openSampleMenu(){
+  const old=document.getElementById("sampleMenuModal");
+  if(old)old.remove();
+
+  const modal=document.createElement("div");
+  modal.id="sampleMenuModal";
+  modal.className="sampleMenuOverlay";
+  modal.innerHTML=`
+    <div class="sampleMenuBox">
+      <h2>サンプル追加</h2>
+      <p>追加する語数を選んでください。<br>現在の単語は消えません。</p>
+      <div class="sampleMenuButtons">
+        <button type="button" class="blue" onclick="confirmSampleAdd(10)">10語</button>
+        <button type="button" class="blue" onclick="confirmSampleAdd(30)">30語</button>
+        <button type="button" class="blue" onclick="confirmSampleAdd(50)">50語</button>
+      </div>
+      <button type="button" class="dark sampleCancelBtn" onclick="closeSampleMenu()">キャンセル</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeSampleMenu(){
+  const modal=document.getElementById("sampleMenuModal");
+  if(modal)modal.remove();
+}
+
+function confirmSampleAdd(n){
+  if(!confirm(`サンプル${n}語を追加しますか？\n現在の単語は消えません。`)){
+    return;
+  }
+  closeSampleMenu();
+  loadSample(n);
+}
+
+
+function loadSample(sampleCount=10){
+  const samples = [
+    ["apple","名詞","りんご"],
+    ["book","名詞","本"],
+    ["run","動詞","走る"],
+    ["beautiful","形容詞","美しい"],
+    ["quickly","副詞","素早く"],
+    ["speak","動詞","話す"],
+    ["teacher","名詞","先生"],
+    ["write","動詞","書く"],
+    ["happy","形容詞","幸せな"],
+    ["school","名詞","学校"],
+    ["study","動詞","勉強する"],
+    ["read","動詞","読む"],
+    ["computer","名詞","コンピューター"],
+    ["water","名詞","水"],
+    ["strong","形容詞","強い"],
+    ["slowly","副詞","ゆっくり"],
+    ["music","名詞","音楽"],
+    ["listen","動詞","聞く"],
+    ["food","名詞","食べ物"],
+    ["friend","名詞","友達"],
+    ["play","動詞","遊ぶ"],
+    ["small","形容詞","小さい"],
+    ["large","形容詞","大きい"],
+    ["city","名詞","街"],
+    ["country","名詞","国"],
+    ["walk","動詞","歩く"],
+    ["jump","動詞","跳ぶ"],
+    ["drink","動詞","飲む"],
+    ["eat","動詞","食べる"],
+    ["beautifully","副詞","美しく"],
+    ["river","名詞","川"],
+    ["mountain","名詞","山"],
+    ["ocean","名詞","海"],
+    ["drive","動詞","運転する"],
+    ["sleep","動詞","眠る"],
+    ["bright","形容詞","明るい"],
+    ["dark","形容詞","暗い"],
+    ["strongly","副詞","強く"],
+    ["language","名詞","言語"],
+    ["learn","動詞","学ぶ"],
+    ["window","名詞","窓"],
+    ["door","名詞","ドア"],
+    ["open","動詞","開く"],
+    ["close","動詞","閉じる"],
+    ["clean","形容詞","清潔な"],
+    ["dirty","形容詞","汚い"],
+    ["beautiful day","熟語","良い日"],
+    ["take care","熟語","気をつける"],
+    ["look for","句動詞","探す"],
+    ["give up","句動詞","諦める"]
+  ];
+
+  if(!books[currentBook]){
+    alert("単語帳を選択してください");
+    return;
+  }
+
+  const addList = samples.slice(0, sampleCount).map(v => ({
+    word:v[0],
+    pos:v[1],
+    answer:v[2],
+    tagColor:"#4b5563"
+  }));
+
+  books[currentBook].cards.push(...addList);
+
+  save();
+  update();
+
+  if(typeof openEditor==="function"){
+    openEditor();
+  }
+
+  alert(`${addList.length}語追加しました`);
+}
+
+
 function saveBook(){
   books[currentBook].name=$("bookName").value||"新しい単語帳";
 
@@ -2297,6 +2636,43 @@ function updateTestModeButtons(){
   if(!$("testWmBtn")||!$("testMwBtn"))return;
   $("testWmBtn").className=testQType==="wm"?"pill blue":"pill dark";
   $("testMwBtn").className=testQType==="mw"?"pill blue":"pill dark";
+  if($("testNoPrevBtn"))$("testNoPrevBtn").className=testNoPrev?"pill blue":"pill dark";
+}
+
+function toggleTestNoPrev(){
+  testNoPrev=!testNoPrev;
+  updateTestModeButtons();
+  syncTestCountOptions();
+}
+
+function cardKey(c){
+  return String(c.word||"")+"|||"+String(c.answer||"");
+}
+
+function getLastTestKeys(){
+  try{
+    return JSON.parse(localStorage.getItem("lastTestKeys")||"[]");
+  }catch(e){
+    return [];
+  }
+}
+
+function saveLastTestKeys(list){
+  try{
+    localStorage.setItem("lastTestKeys",JSON.stringify(list||[]));
+  }catch(e){}
+}
+
+function testCandidateCards(){
+  let list=baseCards();
+
+  if(testNoPrev){
+    const prev=new Set(getLastTestKeys());
+    const filtered=list.filter(c=>!prev.has(cardKey(c)));
+    if(filtered.length>0)return filtered;
+  }
+
+  return list;
 }
 
 function testQuestionText(card){
@@ -2548,25 +2924,38 @@ function stopStudy(){
 }
 
 function startTest(){
-  let base=baseCards();
+  const candidates=testCandidateCards();
 
-  if(!base.length){
-    go("empty");
+  if(!candidates.length){
+    alert("出題できる単語がありません");
     return;
   }
 
-  let s=Number($("testStart").value),e=Number($("testEnd").value),a=Math.min(s,e),b=Math.max(s,e);
-  let pool=base.slice(a-1,b);
+  let s=Number($("testStart").value||1);
+  let e=Number($("testEnd").value||candidates.length);
+  let a=Math.min(s,e);
+  let b=Math.max(s,e);
 
-  let count=Math.min(Number($("testCount").value||1),pool.length);
-  testCards=shuffleArray(pool).slice(0,count);
+  let rangeCards=candidates.slice(a-1,b);
+
+  if(!rangeCards.length){
+    rangeCards=candidates;
+  }
+
+  let count=Number($("testCount").value||1);
+  count=Math.min(Math.max(1,count),10,rangeCards.length);
+
+  testCards=shuffleArray(rangeCards).slice(0,count);
   testIndex=0;
   testScore=0;
   testResults=[];
 
+  saveLastTestKeys(testCards.map(cardKey));
+
   go("testPlay");
   renderTest();
 }
+
 
 function renderTest(){
   if(!testCards.length)return;
@@ -2780,6 +3169,128 @@ function updateRandomButtonUI(){
   btn.className=randomOrder?"pill blue randomPill active":"pill dark randomPill";
 }
 
+
+
+/* v31 force sample system */
+window.loadSample = function(sampleCount=10){
+  const samples = [
+    ["apple","名詞","りんご"],
+    ["book","名詞","本"],
+    ["run","動詞","走る"],
+    ["beautiful","形容詞","美しい"],
+    ["quickly","副詞","素早く"],
+    ["speak","動詞","話す"],
+    ["teacher","名詞","先生"],
+    ["write","動詞","書く"],
+    ["happy","形容詞","幸せな"],
+    ["school","名詞","学校"],
+    ["study","動詞","勉強する"],
+    ["read","動詞","読む"],
+    ["computer","名詞","コンピューター"],
+    ["water","名詞","水"],
+    ["strong","形容詞","強い"],
+    ["slowly","副詞","ゆっくり"],
+    ["music","名詞","音楽"],
+    ["listen","動詞","聞く"],
+    ["food","名詞","食べ物"],
+    ["friend","名詞","友達"],
+    ["play","動詞","遊ぶ"],
+    ["small","形容詞","小さい"],
+    ["large","形容詞","大きい"],
+    ["city","名詞","街"],
+    ["country","名詞","国"],
+    ["walk","動詞","歩く"],
+    ["jump","動詞","跳ぶ"],
+    ["drink","動詞","飲む"],
+    ["eat","動詞","食べる"],
+    ["beautifully","副詞","美しく"],
+    ["river","名詞","川"],
+    ["mountain","名詞","山"],
+    ["ocean","名詞","海"],
+    ["drive","動詞","運転する"],
+    ["sleep","動詞","眠る"],
+    ["bright","形容詞","明るい"],
+    ["dark","形容詞","暗い"],
+    ["strongly","副詞","強く"],
+    ["language","名詞","言語"],
+    ["learn","動詞","学ぶ"],
+    ["window","名詞","窓"],
+    ["door","名詞","ドア"],
+    ["open","動詞","開く"],
+    ["close","動詞","閉じる"],
+    ["clean","形容詞","清潔な"],
+    ["dirty","形容詞","汚い"],
+    ["beautiful day","熟語","良い日"],
+    ["take care","熟語","気をつける"],
+    ["look for","句動詞","探す"],
+    ["give up","句動詞","諦める"]
+  ];
+
+  if(!books || !books[currentBook]){
+    alert("単語帳を選択してください");
+    return;
+  }
+
+  const target = books[currentBook];
+
+  if(!Array.isArray(target.cards)){
+    target.cards = [];
+  }
+
+  const add = samples.slice(0, sampleCount).map(v=>({
+    word:v[0],
+    pos:v[1],
+    answer:v[2],
+    tagColor:"#4b5563"
+  }));
+
+  target.cards.push(...add);
+
+  try{
+    save();
+  }catch(e){
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+
+  try{
+    update();
+  }catch(e){}
+
+  try{
+    openEditor();
+  }catch(e){}
+
+  alert(add.length + "語追加しました");
+};
+
+
+/* VA7.0.2 notice system */
+const NOTICE_VERSION = "Vr_a7.0.1_notice_1";
+
+function updateNoticeBadge(){
+  const badge=document.getElementById("noticeBadge");
+  if(!badge)return;
+
+  const seen=localStorage.getItem("va_notice_seen");
+
+  if(seen===NOTICE_VERSION){
+    badge.classList.add("hidden");
+  }else{
+    badge.classList.remove("hidden");
+  }
+}
+
+setTimeout(updateNoticeBadge,100);
+
+const oldOpenNotice = openNotice;
+
+openNotice = function(){
+  localStorage.setItem("va_notice_seen", NOTICE_VERSION);
+
+  oldOpenNotice();
+
+  setTimeout(updateNoticeBadge,50);
+};
 
 </script>
 </body>
