@@ -1634,6 +1634,95 @@ body.light .sampleMenuBox{
   white-space:nowrap !important;
 }
 
+
+/* 学習記録：0分の日も表示 */
+.recordItem.zeroRecord{
+  opacity:.55;
+}
+.recordItem.zeroRecord .recordTime{
+  color:#9ca3af;
+}
+
+
+.bookTypeMini{
+  font-size:11px;
+  opacity:.6;
+  margin-top:2px;
+}
+
+
+/* VA7.0.1.1: 単語帳タイトル下に種類表示 */
+.bookTitleBlock{
+  min-width:0;
+  width:100%;
+}
+.bookTitleLine{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.bookTitleText{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.bookTypeMini{
+  display:block;
+  font-size:12px;
+  opacity:.62;
+  margin-top:5px;
+  text-align:left;
+  font-weight:800;
+}
+
+/* 単語帳タイプ選択 */
+.subjectSelect{
+  height:56px;
+  border-radius:18px;
+  font-size:18px;
+  font-weight:900;
+  margin:12px 0 8px;
+  text-align:center;
+}
+
+
+/* VA7.0.1.1 fix: 科目はタイトル下、選択中はボタン上 */
+.bookTitleBlock{
+  min-width:0 !important;
+  width:100% !important;
+  padding-right:0 !important;
+}
+.bookTitleLine{
+  display:block !important;
+  min-width:0 !important;
+}
+.bookTitleText{
+  display:block !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+.bookTypeMini{
+  display:block !important;
+  font-size:12px !important;
+  opacity:.62 !important;
+  margin-top:5px !important;
+  text-align:left !important;
+  font-weight:800 !important;
+}
+.bookItem .tools .selectedMsgMini{
+  align-self:flex-start !important;
+  margin-right:4px !important;
+}
+.subjectSelect{
+  height:50px;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:900;
+  margin-top:4px;
+}
+
 </style>
 </head>
 <body>
@@ -1659,7 +1748,7 @@ body.light .sampleMenuBox{
       <button class="big blue" onclick="quickStart()">クイックスタート</button>
     </div>
     <div class="stats">
-      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div><div id="homeVersionText" class="versionMini">Vr_a7.0.1</div></div>
+      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div><div id="homeVersionText" class="versionMini">Vr_a7.0.1.1</div></div>
       <div class="stat"><div class="statNum" id="studyTime">0分</div><div class="statLabel">学習時間</div></div>
     </div>
   </div>
@@ -1668,15 +1757,18 @@ body.light .sampleMenuBox{
 
 <section id="bookModePick" class="screen">
   <div class="center">
-    <h1>単語帳タイプ</h1>
-    <p class="label">作る単語帳の種類を選択</p>
-    <div class="modePickRow">
-      <button class="active" onclick="selectBookMode('english',this)">英語</button>
-      <button onclick="selectBookMode('kobun',this)">古文</button>
-      <button onclick="selectBookMode('kanbun',this)">漢文</button>
+    <div class="card settingsBox">
+      <h1>単語帳タイプ</h1>
+      <div class="label">作る単語帳の種類を選択</div>
+      <select id="subjectSelect" class="subjectSelect">
+        <option value="english">英語</option>
+        <option value="kobun">古文</option>
+        <option value="kanbun">漢文</option>
+        <option value="society">社会</option>
+      </select>
+      <button class="big blue" onclick="createBookFromSelect()">単語帳を作成</button>
+      <button class="big dark" onclick="go('register')">戻る</button>
     </div>
-    <button class="big blue" style="max-width:280px;margin-bottom:12px" onclick="createBookFromSelected()">単語帳を作成</button>
-    <button class="big dark" style="max-width:280px" onclick="go('pickBook')">戻る</button>
   </div>
 </section>
 
@@ -1768,6 +1860,13 @@ body.light .sampleMenuBox{
     <h2>単語編集</h2>
     <div class="label">単語帳タイトル</div>
     <input id="bookName" placeholder="単語帳タイトル">
+    <div class="label">単語帳タイプ</div>
+    <select id="editBookMode" class="subjectSelect" onchange="changeEditBookMode()">
+      <option value="english">英語</option>
+      <option value="kobun">古文</option>
+      <option value="kanbun">漢文</option>
+      <option value="society">社会</option>
+    </select>
     <div id="rows"></div>
     <button class="big blue" onclick="addRow()">＋ 単語を追加</button>
 
@@ -1860,7 +1959,31 @@ body.light .sampleMenuBox{
 </div>
 
 <script>
-const APP_VERSION = "Vr_a7.0.1";
+
+
+const SUBJECT_POS_MAP = {
+  english:["選択しない","名詞","動詞","形容詞","副詞","熟語","句動詞"],
+  kobun:["選択しない","動詞","形容詞","形容動詞","助動詞","敬語"],
+  kanbun:["選択しない","句法","漢字","再読文字","重要語"],
+  society:[]
+};
+
+const SUBJECT_LABEL_MAP = {
+  english:"英語",
+  kobun:"古文",
+  kanbun:"漢文",
+  society:"社会"
+};
+
+function getSubjectLabel(mode){
+  return SUBJECT_LABEL_MAP[mode] || "英語";
+}
+
+function getPosOptionsByMode(mode){
+  return SUBJECT_POS_MAP[mode] || [];
+}
+
+const APP_VERSION = "Vr_a7.0.1.1";
 
 const DEFAULT_BOOKS=[{name:"新しい単語帳",mode:"english",cards:[{word:"apple",pos:"名詞",answer:"りんご"},{word:"book",pos:"名詞",answer:"本"}]}];
 
@@ -1974,7 +2097,7 @@ function startBackupDownload(){
   try{
     const data={
       app:"単語帳アプリ",
-      version:"Vr_a7.0.1",
+      version:"Vr_a7.0.1.1",
       createdAt:new Date().toISOString(),
       books:books,
       currentBook:currentBook,
@@ -2098,12 +2221,15 @@ let books=loadBooksSafely();
 let currentBook=Number(localStorage.getItem("currentBook")||0);
 migrateBookModes();
 if(currentBook<0||currentBook>=books.length)currentBook=0;
+let editBook=currentBook;
 
 let cards=[],index=0,answerVisible=false,qType="wm",auto=false,autoTimer=null,answerTimer=null,prevStep=1,nextStep=1,currentScreen="home";
 let studyReturnScreen="range";
 let randomOrder=false;
 let studyRecords=JSON.parse(localStorage.getItem("studyRecords")||"{}");
 let currentStudyDate=todayKey();
+let studyStartDate=localStorage.getItem("studyStartDate")||currentStudyDate;
+localStorage.setItem("studyStartDate",studyStartDate);
 let studySeconds=Number(studyRecords[currentStudyDate]||0),studyTimer=null,studying=false;
 let testCards=[],testIndex=0,testScore=0,testQType="wm",testResults=[],testNoPrev=false,testDesiredCount=10;
 const $=id=>document.getElementById(id);
@@ -2173,6 +2299,35 @@ function saveStudyRecords(){
   localStorage.setItem("studySeconds",studySeconds);
 }
 
+
+function addDaysKey(key,days){
+  const parts=String(key).split("-").map(Number);
+  const d=new Date(parts[0],parts[1]-1,parts[2]);
+  d.setDate(d.getDate()+days);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+function dateKeyToTime(key){
+  const parts=String(key).split("-").map(Number);
+  return new Date(parts[0],parts[1]-1,parts[2]).getTime();
+}
+
+function getRecordDateRange(){
+  const today=todayKey();
+  let start=localStorage.getItem("studyStartDate")||today;
+
+  const keys=Object.keys(studyRecords||{});
+  if(keys.length){
+    const oldest=keys.sort()[0];
+    if(oldest && oldest<start)start=oldest;
+  }
+
+  return {start,today};
+}
+
 function formatDateLabel(key){
   const parts=String(key).split("-");
   if(parts.length!==3)return key;
@@ -2186,20 +2341,29 @@ function renderStudyRecords(){
   syncTodayStudy();
   saveStudyRecords();
 
-  const entries=Object.entries(studyRecords)
-    .filter(([_,sec])=>Number(sec)>0)
-    .sort((a,b)=>b[0].localeCompare(a[0]));
+  const range=getRecordDateRange();
+  const start=range.start;
+  const today=range.today;
 
   box.innerHTML="";
 
-  if(!entries.length){
+  if(dateKeyToTime(start)>dateKeyToTime(today)){
     box.innerHTML='<div class="emptyRecord">まだ学習記録はありません</div>';
     return;
   }
 
-  entries.forEach(([date,sec])=>{
+  let current=today;
+  const items=[];
+
+  while(dateKeyToTime(current)>=dateKeyToTime(start)){
+    const sec=Number(studyRecords[current]||0);
+    items.push([current,sec]);
+    current=addDaysKey(current,-1);
+  }
+
+  items.forEach(([date,sec])=>{
     const div=document.createElement("div");
-    div.className="recordItem";
+    div.className="recordItem"+(Number(sec)===0?" zeroRecord":"");
     div.innerHTML=`
       <span class="recordDate">${formatDateLabel(date)}</span>
       <span class="recordTime">${format(sec)}</span>
@@ -2293,27 +2457,34 @@ function updateBookLists(){
     box.innerHTML="";
 
     books.forEach((b,i)=>{
-      let div=document.createElement("div");
-      div.className="bookItem"+(i===currentBook?" selected":"");
+      const selectedIndex = pickMode ? currentBook : (typeof editBook!=="undefined"?editBook:currentBook);
 
-      let status=i===currentBook?'<span class="selectedMsgMini">選択中</span>':"";
+      let div=document.createElement("div");
+      div.className="bookItem"+(i===selectedIndex?" selected":"");
+
+      let status=i===selectedIndex
+        ? `<span class="selectedMsgMini">選択中</span>`
+        :"";
 
       div.innerHTML=`
-        <div style="display:flex;align-items:center;gap:10px;min-width:0">
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.name)}</span>
-          ${status}
+        <div class="bookTitleBlock">
+          <div class="bookTitleLine">
+            <span class="bookTitleText">${escapeHtml(b.name)}</span>
+          </div>
+          <div class="bookTypeMini">${escapeHtml(getSubjectLabel(b.mode||"english"))}</div>
         </div>
         <span class="tools">
+          ${status}
           <button type="button" class="bookEditBtn">編集</button>
           <button type="button" class="bookDeleteBtn">削除</button>
         </span>
       `;
 
       div.onclick=()=>{
-        currentBook=i;
-        save();
-
         if(pickMode){
+          currentBook=i;
+          save();
+
           $("pickMsg").textContent="切り替え中…";
           updateBookLists();
 
@@ -2322,6 +2493,7 @@ function updateBookLists(){
             go("home");
           },350);
         }else{
+          editBook=i;
           updateBookLists();
         }
       };
@@ -2330,13 +2502,21 @@ function updateBookLists(){
 
       toolSpans[0].onclick=e=>{
         e.stopPropagation();
-        currentBook=i;
-        save();
-        openEditor();
+
+        if(pickMode){
+          currentBook=i;
+          editBook=i;
+          save();
+        }else{
+          editBook=i;
+        }
+
+        openEditor(i);
       };
 
       toolSpans[1].onclick=e=>{
         e.stopPropagation();
+
         if(books.length<=1){
           alert("単語帳は最低1つ必要です");
           return;
@@ -2344,7 +2524,12 @@ function updateBookLists(){
 
         if(confirm("この単語帳を削除しますか？")){
           books.splice(i,1);
+
           if(currentBook>=books.length)currentBook=books.length-1;
+          if(editBook>=books.length)editBook=books.length-1;
+          if(currentBook<0)currentBook=0;
+          if(editBook<0)editBook=0;
+
           save();
           update();
         }
@@ -2357,6 +2542,7 @@ function updateBookLists(){
   make("pickBookList",true);
   make("bookList",false);
 }
+
 
 function updateRange(){
   let total=Math.max(baseCards().length,1);
@@ -2446,25 +2632,27 @@ function selectBookMode(mode,el){
   if(el) el.classList.add("active");
 }
 
-function createBookFromSelected(){
-  createBookWithMode(selectedBookMode||"english");
-}
+function createBookFromSelected(){createBookFromSelect();}
 
 function createBookWithMode(mode){
   let name=prompt("単語帳名");
   if(!name)return;
   books.push({name,mode:mode||"english",cards:[]});
-  currentBook=books.length-1;
+  editBook=books.length-1;
   save();
   update();
-  go("pickBook");
+  go("register");
 }
-function openEditor(){
-  $("bookName").value=books[currentBook].name;
+function openEditor(bookIndex=editBook){
+  editBook=bookIndex;
+  $("bookName").value=books[editBook].name;
+  if($("editBookMode"))$("editBookMode").value=books[editBook].mode||"english";
   $("rows").innerHTML="";
-  if(!baseCards().length)addRow();
-  else baseCards().forEach(c=>addRow(c));
+  if(!books[editBook].cards.length)addRow();
+  else books[editBook].cards.forEach(c=>addRow(c));
+  
   go("edit");
+  setTimeout(updatePosVisibility,50);
 }
 
 function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563"}){
@@ -2524,6 +2712,10 @@ function selectRowColor(btn,color){
 
 
 function openNotice(){
+  localStorage.setItem("va_notice_seen","Vr_a7.0.1.1_notice");
+  const badge=document.getElementById("noticeBadge");
+  if(badge)badge.classList.add("hidden");
+
   const old=document.getElementById("noticeModal");
   if(old)old.remove();
 
@@ -2534,9 +2726,15 @@ function openNotice(){
     <div class="sampleMenuBox">
       <h2>お知らせ</h2>
       <div style="text-align:left;line-height:1.7;font-size:14px;margin:14px 0 18px">
-        <div>・Vr_a7.0.1 サンプル追加機能改善</div>
-        <div>・Vr_a7.0.1 バックアップ機能追加</div>
-        <div>・Vr_a7.0.1 スマホUI最適化</div>
+
+        <div>・Vr_a7.0.1.1 科目別UIを追加しました</div>
+        <div>・単語帳一覧で、タイトルの下に科目が表示されるようにしました</div>
+        <div>・単語帳作成時の科目選択をスクロール選択式にしました</div>
+        <div>・英語/古文/漢文で選べる品詞を分けました</div>
+        <div>・社会では品詞選択を非表示にしました</div>
+                <div>・登録画面で選択した単語帳が、学習用の選択に反映されないようにしました</div>
+        <div>・学習記録で0分の日も表示されるようにしました</div>
+
       </div>
       <button type="button" class="blue sampleCancelBtn" onclick="closeNotice()">閉じる</button>
     </div>
@@ -2651,7 +2849,7 @@ function loadSample(sampleCount=10){
     tagColor:"#4b5563"
   }));
 
-  books[currentBook].cards.push(...addList);
+  books[editBook].cards.push(...addList);
 
   save();
   update();
@@ -2665,11 +2863,12 @@ function loadSample(sampleCount=10){
 
 
 function saveBook(){
-  books[currentBook].name=$("bookName").value||"新しい単語帳";
+  books[editBook].name=$("bookName").value||"新しい単語帳";
+  if($("editBookMode"))books[editBook].mode=$("editBookMode").value||"english";
 
   let rows=[...document.querySelectorAll(".wordRow")];
 
-  books[currentBook].cards=rows.map(r=>({
+  books[editBook].cards=rows.map(r=>({
     word:r.querySelector(".w").value.trim(),
     pos:r.querySelector(".p").value,
     answer:r.querySelector(".a").value.trim(),
@@ -3311,12 +3510,12 @@ window.loadSample = function(sampleCount=10){
     ["give up","句動詞","諦める"]
   ];
 
-  if(!books || !books[currentBook]){
+  if(!books || !books[editBook]){
     alert("単語帳を選択してください");
     return;
   }
 
-  const target = books[currentBook];
+  const target = books[editBook];
 
   if(!Array.isArray(target.cards)){
     target.cards = [];
@@ -3350,7 +3549,7 @@ window.loadSample = function(sampleCount=10){
 
 
 /* VA7.0.2 notice system */
-const NOTICE_VERSION = "Vr_a7.0.1_notice_1";
+const NOTICE_VERSION = "Vr_a7.0.1.1_notice_1";
 
 function updateNoticeBadge(){
   const badge=document.getElementById("noticeBadge");
@@ -3547,6 +3746,88 @@ function getTestOptionBaseCount(){
   return candidates.length;
 }
 
+
+
+
+
+function createBookFromSelect(){
+  const mode=$("subjectSelect")?.value || "english";
+  createBookWithMode(mode);
+}
+
+
+function getCurrentEditMode(){
+  return (books[typeof editBook!=="undefined"?editBook:currentBook]?.mode)||"english";
+}
+
+function fillPosSelect(sel,selectedValue){
+  const mode=getCurrentEditMode();
+  const list=getPosOptionsByMode(mode);
+
+  if(!list.length){
+    sel.innerHTML='<option value="">選択しない</option>';
+    sel.value="";
+    sel.style.display="none";
+    return;
+  }
+
+  sel.style.display="";
+  sel.innerHTML=list.map(v=>`<option value="${v}">${v}</option>`).join("");
+
+  if(selectedValue && list.includes(selectedValue)){
+    sel.value=selectedValue;
+  }else{
+    sel.value=list[0];
+  }
+}
+
+
+
+
+function changeEditBookMode(){
+  if(typeof editBook==="undefined" || !books[editBook])return;
+  const mode=$("editBookMode")?.value || "english";
+  books[editBook].mode=mode;
+  updatePosVisibility();
+  save();
+  updateBookLists();
+}
+
+
+function updatePosVisibility(){
+  const mode=(books[typeof editBook!=="undefined"?editBook:currentBook]?.mode)||"english";
+  const list=getPosOptionsByMode(mode);
+
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const selects=[...row.querySelectorAll("select")];
+    const sel=selects.find(s=>s.classList.contains("posSelect") || s.options.length<=15);
+
+    if(!sel)return;
+
+    sel.classList.add("posSelect");
+
+    if(!list.length){
+      sel.style.display="none";
+      sel.value="";
+      return;
+    }
+
+    const prev=sel.value;
+    sel.style.display="";
+    sel.innerHTML=list.map(v=>`<option value="${v}">${v}</option>`).join("");
+    sel.value=list.includes(prev)?prev:list[0];
+  });
+}
+
+
 </script>
-</body>
+<div id="noticeContent" style="display:none">
+<div class="noticeItem">
+  <div>・Vr_a7.0.1.1 科目別UIを追加</div>
+  <div>・単語帳一覧に科目表示を追加</div>
+  <div>・社会は品詞非表示</div>
+  <div>・品詞「選択しない」を追加</div>
+  <div>・科目変更時に品詞を自動切替</div>
+</div>
+</div></body>
 </html><!-- v22.20 random memory v2: 1番目の連続偏りを強く軽減 -->
