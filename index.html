@@ -1723,6 +1723,13 @@ body.light .sampleMenuBox{
   margin-top:4px;
 }
 
+
+/* notice badge read/unread fix */
+#noticeBadge.hidden,
+.noticeBadge.hidden{
+  display:none !important;
+}
+
 </style>
 </head>
 <body>
@@ -2713,8 +2720,12 @@ function selectRowColor(btn,color){
 
 function openNotice(){
   localStorage.setItem("va_notice_seen","Vr_a7.0.1.1_notice");
-  const badge=document.getElementById("noticeBadge");
-  if(badge)badge.classList.add("hidden");
+
+  const badge=document.getElementById("noticeBadge") || document.querySelector(".noticeBadge");
+  if(badge){
+    badge.classList.add("hidden");
+    badge.style.display="none";
+  }
 
   const old=document.getElementById("noticeModal");
   if(old)old.remove();
@@ -2732,7 +2743,7 @@ function openNotice(){
         <div>・単語帳作成時の科目選択をスクロール選択式にしました</div>
         <div>・英語/古文/漢文で選べる品詞を分けました</div>
         <div>・社会では品詞選択を非表示にしました</div>
-                <div>・登録画面で選択した単語帳が、学習用の選択に反映されないようにしました</div>
+        <div>・登録画面で選択した単語帳が、学習用の選択に反映されないようにしました</div>
         <div>・学習記録で0分の日も表示されるようにしました</div>
 
       </div>
@@ -2868,16 +2879,23 @@ function saveBook(){
 
   let rows=[...document.querySelectorAll(".wordRow")];
 
-  books[editBook].cards=rows.map(r=>({
+  const nextCards=rows.map(r=>({
     word:r.querySelector(".w").value.trim(),
-    pos:r.querySelector(".p").value,
+    pos:r.querySelector(".p") ? r.querySelector(".p").value : "",
     answer:r.querySelector(".a").value.trim(),
     tagColor:r.dataset.tagColor||"#4b5563"
   })).filter(c=>c.word&&c.answer);
 
+  if(!confirmDuplicateWordsBeforeSave(nextCards)){
+    return;
+  }
+
+  books[editBook].cards=nextCards;
+
   save();
   go("register");
 }
+
 
 function loadSample(){
   $("rows").innerHTML="";
@@ -3551,21 +3569,6 @@ window.loadSample = function(sampleCount=10){
 /* VA7.0.2 notice system */
 const NOTICE_VERSION = "Vr_a7.0.1.1_notice_1";
 
-function updateNoticeBadge(){
-  const badge=document.getElementById("noticeBadge");
-  if(!badge)return;
-
-  const seen=localStorage.getItem("va_notice_seen");
-
-  if(seen===NOTICE_VERSION){
-    badge.classList.add("hidden");
-  }else{
-    badge.classList.remove("hidden");
-  }
-}
-
-setTimeout(updateNoticeBadge,100);
-
 const oldOpenNotice = openNotice;
 
 openNotice = function(){
@@ -3819,6 +3822,88 @@ function updatePosVisibility(){
   });
 }
 
+
+
+/* reliable notice badge updater */
+function updateNoticeBadge(){
+  const badge=document.getElementById("noticeBadge") || document.querySelector(".noticeBadge");
+  if(!badge)return;
+
+  const seen=localStorage.getItem("va_notice_seen");
+  if(seen==="Vr_a7.0.1.1_notice"){
+    badge.classList.add("hidden");
+    badge.style.display="none";
+  }else{
+    badge.classList.remove("hidden");
+    badge.style.display="flex";
+    badge.textContent="1";
+  }
+}
+
+window.addEventListener("load",()=>{
+  setTimeout(updateNoticeBadge,100);
+});
+
+
+function normalizeWordForDuplicateCheck(s){
+  return String(s||"")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g," ");
+}
+
+function findDuplicateWordsInOtherBooks(newCards){
+  const duplicates=[];
+  const seenInNew=new Set();
+
+  newCards.forEach(card=>{
+    const key=normalizeWordForDuplicateCheck(card.word);
+    if(!key || seenInNew.has(key))return;
+    seenInNew.add(key);
+
+    const hitBooks=[];
+
+    books.forEach((book,bookIndex)=>{
+      if(bookIndex===editBook)return;
+
+      const found=(book.cards||[]).some(c=>{
+        return normalizeWordForDuplicateCheck(c.word)===key;
+      });
+
+      if(found){
+        hitBooks.push(book.name||"名前なし");
+      }
+    });
+
+    if(hitBooks.length){
+      duplicates.push({
+        word:card.word,
+        books:hitBooks
+      });
+    }
+  });
+
+  return duplicates;
+}
+
+function confirmDuplicateWordsBeforeSave(newCards){
+  const duplicates=findDuplicateWordsInOtherBooks(newCards);
+
+  if(!duplicates.length)return true;
+
+  const lines=duplicates.slice(0,8).map(d=>{
+    return `・${d.word}：${d.books.join(" / ")}`;
+  }).join("\n");
+
+  const more=duplicates.length>8 ? `\n他 ${duplicates.length-8} 件` : "";
+
+  return confirm(
+    "他の単語帳と重複している単語があります。\n\n"+
+    lines+
+    more+
+    "\n\nそれでも登録しますか？"
+  );
+}
 
 </script>
 <div id="noticeContent" style="display:none">
