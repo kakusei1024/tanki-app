@@ -2048,6 +2048,13 @@ body.light .meaningColorDot.active{
 .wordRow{
   overflow:visible !important;
 }
+
+
+/* final fix: 意味色ボタン背景を選択色に必ず同期 */
+.meaningColorBtn{
+  background:var(--meaning-color,#4b5563) !important;
+}
+
 </style>
 </head>
 <body>
@@ -3034,7 +3041,10 @@ function selectRowColor(btn,color){
   row.querySelectorAll(".rowColorDot").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   const main=row.querySelector(".rowColorBtn");
-  if(main)main.style.background=color||"#4b5563";
+  if(main){
+      main.style.setProperty("--meaning-color", color||"#4b5563");
+      main.style.setProperty("background", color||"#4b5563", "important");
+    }
 }
 
 
@@ -4601,7 +4611,7 @@ function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563",answerColor:"#4b5
     <textarea class="a" placeholder="りんご">${escapeHtml(c.answer||"")}</textarea>
 
     <div class="meaningColorWrap">
-      <button type="button" class="meaningColorBtn" style="background:${div.dataset.answerColor}" onclick="toggleMeaningColorPalette(this)">意味色</button>
+      <button type="button" class="meaningColorBtn" style="--meaning-color:${div.dataset.answerColor};background:${div.dataset.answerColor}" onclick="toggleMeaningColorPalette(this)">意味色</button>
       <div class="meaningColorPalette">${meaningColorButtons}</div>
     </div>
 
@@ -4629,12 +4639,35 @@ function selectMeaningColor(btn,color){
     btn.classList.add("active");
 
     const main=wrap.querySelector(".meaningColorBtn");
-    if(main)main.style.background=color||"#4b5563";
+    if(main){
+      main.style.setProperty("--meaning-color", color||"#4b5563");
+      main.style.setProperty("background", color||"#4b5563", "important");
+    }
 
+    /* 色を押しても一覧は閉じない。品詞色と同じく選択中だけ反映 */
     const pal=wrap.querySelector(".meaningColorPalette");
-    if(pal)pal.classList.remove("show");
+    if(pal)pal.classList.add("show");
   }
 }
+
+
+
+function syncMeaningColorButtonColors(){
+  document.querySelectorAll(".meaningColorWrap").forEach(wrap=>{
+    const row=wrap.closest(".wordRow");
+    const btn=wrap.querySelector(".meaningColorBtn");
+    if(!row || !btn)return;
+    const color=row.dataset.answerColor || "#4b5563";
+    btn.style.setProperty("--meaning-color", color);
+    btn.style.setProperty("background", color, "important");
+  });
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    syncMeaningColorButtonColors();
+  }
+},300);
 
 /* 古い意味色処理を停止：DOMを後から移動/追加しない */
 function syncMeaningColorPickers(){}
@@ -4648,6 +4681,141 @@ function bindMeaningColorStable(){}
 
 /* 既に開いている編集画面があれば古いcolor inputだけ消す */
 document.querySelectorAll(".answerColorPicker").forEach(el=>el.remove());
+
+
+
+/* =========================================================
+   FINAL FIX: 意味色の保存反映 + 学習画面反映 + 品詞なしバッジ非表示
+   ※バージョン表記は変更しない
+========================================================= */
+
+function normalizeNonePosValue(pos){
+  const p=String(pos||"").trim();
+  if(!p || p==="選択しない" || p==="品詞を選択しない" || p==="なし")return "";
+  return p;
+}
+
+function getRowMeaningColor(row){
+  if(!row)return "#4b5563";
+  const wrap=row.querySelector(".meaningColorWrap");
+  const btn=wrap?.querySelector(".meaningColorBtn");
+  let color=row.dataset.answerColor || btn?.style?.backgroundColor || "#4b5563";
+  const active=wrap?.querySelector(".meaningColorDot.active");
+  if(active?.dataset?.color)color=active.dataset.color;
+  row.dataset.answerColor=color;
+  return color;
+}
+
+function selectMeaningColor(btn,color){
+  const row=btn.closest(".wordRow");
+  if(!row)return;
+
+  const nextColor=color||"#4b5563";
+  row.dataset.answerColor=nextColor;
+
+  const wrap=btn.closest(".meaningColorWrap");
+  if(wrap){
+    wrap.querySelectorAll(".meaningColorDot").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const main=wrap.querySelector(".meaningColorBtn");
+    if(main){
+      main.style.setProperty("--meaning-color", nextColor);
+      main.style.setProperty("background", nextColor, "important");
+      main.dataset.color=nextColor;
+    }
+
+    // 色を押しても一覧は閉じない
+    const pal=wrap.querySelector(".meaningColorPalette");
+    if(pal)pal.classList.add("show");
+  }
+}
+
+function syncMeaningColorButtonColors(){
+  document.querySelectorAll(".meaningColorWrap").forEach(wrap=>{
+    const row=wrap.closest(".wordRow");
+    const btn=wrap.querySelector(".meaningColorBtn");
+    if(!row || !btn)return;
+    const color=getRowMeaningColor(row);
+    btn.style.setProperty("--meaning-color", color);
+    btn.style.setProperty("background", color, "important");
+    btn.dataset.color=color;
+    wrap.querySelectorAll(".meaningColorDot").forEach(dot=>{
+      dot.classList.toggle("active", String(dot.dataset.color||"").toLowerCase()===String(color||"").toLowerCase());
+    });
+  });
+}
+
+function saveBook(){
+  books[editBook].name=$("bookName").value||"新しい単語帳";
+  if($("editBookMode"))books[editBook].mode=$("editBookMode").value||"english";
+
+  let rows=[...document.querySelectorAll(".wordRow")];
+
+  const nextCards=rows.map(r=>({
+    word:r.querySelector(".w").value.trim(),
+    pos:normalizeNonePosValue(r.querySelector(".p") ? r.querySelector(".p").value : ""),
+    answer:r.querySelector(".a").value.trim(),
+    tagColor:r.dataset.tagColor||"#4b5563",
+    answerColor:getRowMeaningColor(r)||"#4b5563"
+  })).filter(c=>c.word&&c.answer);
+
+  if(!confirmDuplicateWordsBeforeSave(nextCards)){
+    return;
+  }
+
+  books[editBook].cards=nextCards;
+
+  save();
+  go("register");
+}
+
+function applyStudyDisplayFixes(){
+  try{
+    if(currentScreen!=="study" || !cards || !cards.length || !cards[index])return;
+    const c=cards[index];
+    const pos=normalizeNonePosValue(c.pos);
+    const badge=$("posBadge");
+    if(badge){
+      const ps=posShort(pos);
+      badge.textContent=ps;
+      badge.style.display=ps ? "inline-flex" : "none";
+      if(ps)badge.style.setProperty("background", c.tagColor || "#4b5563", "important");
+    }
+
+    const wordEl=$("word");
+    const answerEl=$("answer");
+    if(wordEl)wordEl.style.color="";
+    if(answerEl)answerEl.style.color="";
+
+    const meaningColor=c.answerColor || "";
+    // 単→意：答えとして表示される意味に色を反映
+    if(qType==="wm"){
+      if(answerEl)answerEl.style.color=meaningColor;
+    }else{
+      // 意→単：問題として表示される意味に色を反映
+      if(wordEl)wordEl.style.color=meaningColor;
+    }
+  }catch(e){}
+}
+
+if(typeof render==="function" && !window.__meaningColorRenderPatched){
+  window.__meaningColorRenderPatched=true;
+  const __oldRender=render;
+  render=function(){
+    __oldRender();
+    applyStudyDisplayFixes();
+  };
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    syncMeaningColorButtonColors();
+  }
+  if(document.getElementById("study")?.classList.contains("active")){
+    applyStudyDisplayFixes();
+  }
+},200);
 
 </script>
 <div id="noticeContent" style="display:none">
