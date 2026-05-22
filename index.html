@@ -1731,7 +1731,7 @@ body.light .sampleMenuBox{
 }
 
 
-/* Vr_a7.0.1.3 下ナビ選択中の青範囲をさらに小さく */
+/* Vr_a7.0.1.4 下ナビ選択中の青範囲をさらに小さく */
 .bottomNav{
   padding:7px !important;
   gap:6px !important;
@@ -1763,6 +1763,291 @@ body.light .sampleMenuBox{
   }
 }
 
+
+/* Vr_a7.0.1.4 学習画面：左右移動を中央ボタン横の丸ボタンへ */
+#study .studyMainControl{
+  display:grid !important;
+  grid-template-columns:72px 82px 72px !important;
+  gap:16px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  margin:12px 0 !important;
+}
+
+#study .sideCircle{
+  width:62px !important;
+  height:62px !important;
+  border-radius:50% !important;
+  font-size:24px !important;
+  padding:0 !important;
+}
+
+#study .moveRow{
+  display:none !important;
+}
+
+@media (max-width:430px){
+  #study .studyMainControl{
+    grid-template-columns:60px 70px 60px !important;
+    gap:12px !important;
+  }
+  #study .sideCircle{
+    width:54px !important;
+    height:54px !important;
+    font-size:22px !important;
+  }
+}
+
+
+/* 選択しないタグ非表示の保険 */
+.tag:empty{
+  display:none !important;
+}
+
+/* 学習カード内容を少し下げて中央寄りに */
+.studyCard,
+.card.studyCard,
+#studyCard{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding-top:38px !important;
+}
+
+.studyCard .word,
+#studyWord,
+.wordBig{
+  margin-top:18px !important;
+}
+
+
+/* 意味色ピッカー */
+.answerColorPicker{
+  width:42px !important;
+  height:42px !important;
+  border:none !important;
+  background:none !important;
+  padding:0 !important;
+  border-radius:10px !important;
+  overflow:hidden !important;
+  cursor:pointer !important;
+  margin-right:8px !important;
+  vertical-align:middle !important;
+}
+
+
+/* 意味色選択ボタン */
+.meaningColorWrap{
+  margin:8px 0 10px;
+}
+.meaningColorBtn{
+  height:34px;
+  min-width:108px;
+  border-radius:12px;
+  padding:0 12px;
+  background:#4b5563;
+  color:white;
+  font-size:13px;
+  font-weight:900;
+}
+.meaningColorPalette{
+  display:none;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.meaningColorPalette.show{
+  display:flex;
+}
+.meaningColorDot{
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  padding:0;
+  border:3px solid transparent;
+}
+.meaningColorDot.active{
+  border-color:white;
+  box-shadow:0 0 0 2px rgba(59,130,246,.8);
+}
+body.light .meaningColorDot.active{
+  border-color:#111;
+}
+
+
+/* 意味色ボタン位置調整 */
+.meaningColorWrap{
+  width:100% !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  margin-top:10px !important;
+  margin-bottom:6px !important;
+}
+
+.meaningColorBtn{
+  height:34px !important;
+  border-radius:12px !important;
+}
+
+.meaningColorPalette{
+  position:absolute !important;
+  right:0 !important;
+  margin-top:42px !important;
+  z-index:100 !important;
+}
+
+
+/* 意味色ボタンを品詞色と同じ左寄せ下配置へ */
+.meaningColorWrap{
+  width:100% !important;
+  display:flex !important;
+  justify-content:flex-start !important;
+  align-items:flex-start !important;
+  margin-top:8px !important;
+  margin-bottom:8px !important;
+  position:relative !important;
+}
+
+.meaningColorBtn{
+  background:#4b5563 !important;
+  color:white !important;
+  border-radius:12px !important;
+  padding:0 14px !important;
+  height:34px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+
+.meaningColorPalette{
+  left:0 !important;
+  right:auto !important;
+  margin-top:42px !important;
+}
+
+
+/* 意味色ボタンを意味入力欄の下、削除の上へ */
+.meaningColorWrap{
+  width:100% !important;
+  display:flex !important;
+  justify-content:flex-start !important;
+  margin-top:8px !important;
+  margin-bottom:10px !important;
+  order:3 !important;
+}
+
+.meaningColorBtn{
+  background:#4b5563 !important;
+  color:white !important;
+  border-radius:12px !important;
+  padding:0 14px !important;
+  height:34px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+
+.meaningColorPalette{
+  left:0 !important;
+  right:auto !important;
+  margin-top:42px !important;
+}
+
+
+/* 意味色パレット重なり防止 */
+.meaningColorWrap{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:10px !important;
+  margin-top:10px !important;
+  margin-bottom:14px !important;
+  position:relative !important;
+}
+
+.meaningColorPalette{
+  position:static !important;
+  display:none;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin-top:0 !important;
+  margin-bottom:4px !important;
+  max-width:100% !important;
+}
+
+.meaningColorPalette.show{
+  display:flex !important;
+}
+
+.wordRow{
+  overflow:visible !important;
+  padding-bottom:10px !important;
+}
+
+
+/* 意味色ボタン：品詞色ボタンと同じ通常クリック方式 */
+.meaningColorBtn,
+.meaningColorDot{
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+
+
+
+/* VA7.0.1.4 FIX: 意味色は品詞色と同じ通常レイアウト */
+.answerColorPicker{
+  display:none !important;
+}
+.meaningColorWrap{
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  margin:8px 0 14px !important;
+  position:static !important;
+  order:initial !important;
+}
+.meaningColorBtn{
+  height:34px !important;
+  min-width:108px !important;
+  border-radius:12px !important;
+  padding:0 12px !important;
+  color:white !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+.meaningColorPalette{
+  position:static !important;
+  display:none !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin:0 !important;
+  max-width:100% !important;
+  left:auto !important;
+  right:auto !important;
+  z-index:auto !important;
+}
+.meaningColorPalette.show{
+  display:flex !important;
+}
+.meaningColorDot{
+  width:32px !important;
+  height:32px !important;
+  border-radius:10px !important;
+  padding:0 !important;
+  border:3px solid transparent !important;
+}
+.meaningColorDot.active{
+  border-color:white !important;
+  box-shadow:0 0 0 2px rgba(59,130,246,.8) !important;
+}
+body.light .meaningColorDot.active{
+  border-color:#111 !important;
+}
+.wordRow{
+  overflow:visible !important;
+}
 </style>
 </head>
 <body>
@@ -1788,7 +2073,7 @@ body.light .sampleMenuBox{
       <button class="big blue" onclick="quickStart()">クイックスタート</button>
     </div>
     <div class="stats">
-      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div><div id="homeVersionText" class="versionMini">Vr_a7.0.1.3</div></div>
+      <div class="stat"><div class="statNum" id="statCount">0</div><div class="statLabel">登録単語</div><div id="homeVersionText" class="versionMini">Vr_a7.0.1.4</div></div>
       <div class="stat"><div class="statNum" id="studyTime">0分</div><div class="statLabel">学習時間</div></div>
     </div>
   </div>
@@ -1931,7 +2216,11 @@ body.light .sampleMenuBox{
     <div class="answer" id="answer"></div>
   </div>
 
-  <div class="mainControl"><button id="mainBtn" class="circle blue" onclick="mainAction()">答え</button></div>
+  <div class="mainControl studyMainControl">
+    <button class="circle sideCircle dark pageControlBtn" onclick="prev()">←</button>
+    <button id="mainBtn" class="circle blue" onclick="mainAction()">答え</button>
+    <button class="circle sideCircle dark pageControlBtn" onclick="next()">→</button>
+  </div>
 
   <div id="sideStepControls" class="studySideControls">
     <div class="sideStepBox">
@@ -2023,7 +2312,7 @@ function getPosOptionsByMode(mode){
   return SUBJECT_POS_MAP[mode] || [];
 }
 
-const APP_VERSION = "Vr_a7.0.1.3";
+const APP_VERSION = "Vr_a7.0.1.4";
 
 const DEFAULT_BOOKS=[{name:"新しい単語帳",mode:"english",cards:[{word:"apple",pos:"名詞",answer:"りんご"},{word:"book",pos:"名詞",answer:"本"}]}];
 
@@ -2137,7 +2426,7 @@ function startBackupDownload(){
   try{
     const data={
       app:"単語帳アプリ",
-      version:"Vr_a7.0.1.3",
+      version:"Vr_a7.0.1.4",
       createdAt:new Date().toISOString(),
       books:books,
       currentBook:currentBook,
@@ -2752,7 +3041,7 @@ function selectRowColor(btn,color){
 
 
 function openNotice(){
-  localStorage.setItem("va_notice_seen","Vr_a7.0.1.3_notice");
+  localStorage.setItem("va_notice_seen","Vr_a7.0.1.4_notice");
 
   const badge=document.getElementById("noticeBadge") || document.querySelector(".noticeBadge");
   if(badge){
@@ -2771,10 +3060,10 @@ function openNotice(){
       <h2>お知らせ</h2>
       <div style="text-align:left;line-height:1.7;font-size:14px;margin:14px 0 18px">
 
-        <div>・Vr_a7.0.1.3 登録単語数を選択中の単語帳に合わせて表示するようにしました</div>
+        <div>・Vr_a7.0.1.4 登録単語数を選択中の単語帳に合わせて表示するようにしました</div>
         <div>・下のナビボタンの青い選択範囲を小さくしました</div>
         <div>・重複単語の確認機能を追加しました</div>
-        <div>・Vr_a7.0.1.1 科目別UIを追加しました</div>
+        <div>・Vr_a7.0.1.4 科目別UIを追加しました</div>
 
       </div>
       <button type="button" class="blue sampleCancelBtn" onclick="closeNotice()">閉じる</button>
@@ -3597,7 +3886,7 @@ window.loadSample = function(sampleCount=10){
 
 
 /* VA7.0.2 notice system */
-const NOTICE_VERSION = "Vr_a7.0.1.3_notice_1";
+const NOTICE_VERSION = "Vr_a7.0.1.4_notice_1";
 
 const oldOpenNotice = openNotice;
 
@@ -3860,7 +4149,7 @@ function updateNoticeBadge(){
   if(!badge)return;
 
   const seen=localStorage.getItem("va_notice_seen");
-  if(seen==="Vr_a7.0.1.3_notice"){
+  if(seen==="Vr_a7.0.1.4_notice"){
     badge.classList.add("hidden");
     badge.style.display="none";
   }else{
@@ -3935,10 +4224,435 @@ function confirmDuplicateWordsBeforeSave(newCards){
   );
 }
 
+
+function shouldShowTag(card){
+  return !!(card && card.pos && card.pos !== "選択しない");
+}
+
+
+function syncAnswerColorPickers(){
+  document.querySelectorAll('.wordRow').forEach(row=>{
+    const picker=row.querySelector('.answerColorPicker');
+    if(!picker)return;
+    picker.value=row.dataset.answerColor || '#ffffff';
+  });
+}
+
+setTimeout(syncAnswerColorPickers,200);
+
+
+/* safe meaning color picker - does not override editing */
+function syncMeaningColorPickers(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const answerInput=row.querySelector(".a");
+    if(!answerInput)return;
+
+    if(!row.dataset.answerColor){
+      row.dataset.answerColor="#ffffff";
+    }
+
+    let picker=row.querySelector(".answerColorPicker");
+    if(!picker){
+      picker=document.createElement("input");
+      picker.type="color";
+      picker.className="answerColorPicker";
+      picker.title="意味の色";
+      picker.value=row.dataset.answerColor||"#ffffff";
+      picker.oninput=()=>{row.dataset.answerColor=picker.value;};
+      picker.onchange=()=>{row.dataset.answerColor=picker.value;};
+      answerInput.parentNode.insertBefore(picker,answerInput);
+    }else{
+      picker.value=row.dataset.answerColor||"#ffffff";
+    }
+  });
+}
+
+document.addEventListener("click",()=>{
+  setTimeout(syncMeaningColorPickers,80);
+});
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    syncMeaningColorPickers();
+  }
+},800);
+
+
+/* preserve meaning color after rows are rendered */
+function applySavedMeaningColorsToRows(){
+  const activeBook=books[typeof editBook!=="undefined"?editBook:currentBook];
+  if(!activeBook || !Array.isArray(activeBook.cards))return;
+  const rows=[...document.querySelectorAll(".wordRow")];
+  rows.forEach((row,i)=>{
+    const card=activeBook.cards[i];
+    if(card && card.answerColor){
+      row.dataset.answerColor=card.answerColor;
+      const picker=row.querySelector(".answerColorPicker");
+      if(picker)picker.value=card.answerColor;
+    }
+  });
+}
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    applySavedMeaningColorsToRows();
+  }
+},1000);
+
+
+/* apply meaning color in study view */
+function applyCurrentAnswerColor(){
+  try{
+    if(!cards || !cards[index])return;
+    const answerEl=document.getElementById("answer");
+    if(answerEl){
+      answerEl.style.color=cards[index].answerColor || "";
+    }
+  }catch(e){}
+}
+setInterval(()=>{
+  if(document.getElementById("study")?.classList.contains("active")){
+    applyCurrentAnswerColor();
+  }
+},300);
+
+
+const MEANING_COLORS=["#ffffff","#ef4444","#38bdf8","#22c55e","#facc15","#fb7185","#c084fc","#fb923c","#94a3b8"];
+
+function addMeaningColorButtons(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    if(row.querySelector(".meaningColorWrap"))return;
+
+    const answerInput=row.querySelector(".a");
+    if(!answerInput)return;
+
+    if(!row.dataset.answerColor){
+      row.dataset.answerColor="#ffffff";
+    }
+
+    const wrap=document.createElement("div");
+    wrap.className="meaningColorWrap";
+    wrap.innerHTML=`
+      <button type="button" class="meaningColorBtn">意味色</button>
+      <div class="meaningColorPalette">
+        ${MEANING_COLORS.map(c=>`<button type="button" class="meaningColorDot" data-color="${c}" style="background:${c}"></button>`).join("")}
+      </div>
+    `;
+
+    answerInput.parentNode.insertBefore(wrap,answerInput);
+
+    const btn=wrap.querySelector(".meaningColorBtn");
+    const palette=wrap.querySelector(".meaningColorPalette");
+
+    btn.onclick=(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      palette.classList.toggle("show");
+    };
+
+    wrap.querySelectorAll(".meaningColorDot").forEach(dot=>{
+      dot.onclick=(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+
+        row.dataset.answerColor=dot.dataset.color;
+        wrap.querySelectorAll(".meaningColorDot").forEach(d=>d.classList.remove("active"));
+        dot.classList.add("active");
+
+        palette.classList.remove("show");
+      };
+
+      if(dot.dataset.color.toLowerCase()===(row.dataset.answerColor||"#ffffff").toLowerCase()){
+        dot.classList.add("active");
+      }
+    });
+  });
+}
+
+document.addEventListener("click",()=>{
+  setTimeout(addMeaningColorButtons,80);
+});
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    addMeaningColorButtons();
+  }
+},600);
+
+/* 学習中の意味色を反映 */
+function applyMeaningColorInStudy(){
+  try{
+    if(!cards || !cards[index])return;
+    const answerEl=document.getElementById("answer");
+    if(answerEl){
+      answerEl.style.color=cards[index].answerColor || "";
+    }
+  }catch(e){}
+}
+setInterval(()=>{
+  if(document.getElementById("study")?.classList.contains("active")){
+    applyMeaningColorInStudy();
+  }
+},300);
+
+
+/* move meaning color button near delete area */
+function relocateMeaningColorWrap(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const wrap=row.querySelector(".meaningColorWrap");
+    if(!wrap)return;
+
+    const deleteBtn=row.querySelector(".deleteRow,.removeRow,.deleteBtn");
+
+    if(wrap.parentElement!==row){
+      row.appendChild(wrap);
+    }
+  });
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    relocateMeaningColorWrap();
+  }
+},400);
+
+
+/* align meaning color button like 品詞色 */
+function alignMeaningColorButton(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const wrap=row.querySelector(".meaningColorWrap");
+    const answer=row.querySelector(".a");
+    if(!wrap || !answer)return;
+
+    const parent=answer.parentElement;
+    if(parent && wrap.parentElement!==parent){
+      parent.insertBefore(wrap, answer);
+    }
+  });
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    alignMeaningColorButton();
+  }
+},400);
+
+
+/* move meaning color button below meaning input */
+function moveMeaningButtonUnderMeaningInput(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const wrap=row.querySelector(".meaningColorWrap");
+    const answer=row.querySelector(".a");
+    const deleteBtn=row.querySelector(".deleteRow,.removeRow,.deleteBtn,button.red");
+
+    if(!wrap || !answer)return;
+
+    const parent=answer.parentElement;
+
+    if(deleteBtn && deleteBtn.parentElement===row){
+      row.insertBefore(wrap, deleteBtn);
+    }else{
+      parent.appendChild(wrap);
+    }
+  });
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    moveMeaningButtonUnderMeaningInput();
+  }
+},300);
+
+
+/* prevent overlap under meaning color palette */
+function fixMeaningPaletteSpacing(){
+  document.querySelectorAll(".wordRow").forEach(row=>{
+    const palette=row.querySelector(".meaningColorPalette");
+    const deleteBtn=row.querySelector(".deleteRow,.removeRow,.deleteBtn,button.red");
+
+    if(!palette || !deleteBtn)return;
+
+    if(palette.classList.contains("show")){
+      deleteBtn.style.marginTop="12px";
+    }else{
+      deleteBtn.style.marginTop="";
+    }
+  });
+}
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    fixMeaningPaletteSpacing();
+  }
+},200);
+
+
+
+/* meaning color button stable single-click */
+function bindMeaningColorStable(){
+  document.querySelectorAll(".meaningColorBtn").forEach(btn=>{
+    if(btn.dataset.stableBound==="1")return;
+    btn.dataset.stableBound="1";
+
+    btn.addEventListener("click",(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const wrap=btn.closest(".meaningColorWrap");
+      const palette=wrap?.querySelector(".meaningColorPalette");
+      if(!palette)return;
+
+      palette.classList.toggle("show");
+
+      if(typeof fixMeaningPaletteSpacing==="function"){
+        fixMeaningPaletteSpacing();
+      }
+    });
+  });
+
+  document.querySelectorAll(".meaningColorDot").forEach(dot=>{
+    if(dot.dataset.stableBound==="1")return;
+    dot.dataset.stableBound="1";
+
+    dot.addEventListener("click",(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const row=dot.closest(".wordRow");
+      const wrap=dot.closest(".meaningColorWrap");
+      if(!row || !wrap)return;
+
+      row.dataset.answerColor=dot.dataset.color;
+
+      wrap.querySelectorAll(".meaningColorDot").forEach(d=>d.classList.remove("active"));
+      dot.classList.add("active");
+
+      const palette=wrap.querySelector(".meaningColorPalette");
+      if(palette)palette.classList.remove("show");
+
+      if(typeof fixMeaningPaletteSpacing==="function"){
+        fixMeaningPaletteSpacing();
+      }
+    });
+  });
+}
+
+document.addEventListener("click",()=>{
+  setTimeout(bindMeaningColorStable,30);
+});
+
+setInterval(()=>{
+  if(document.getElementById("edit")?.classList.contains("active")){
+    bindMeaningColorStable();
+  }
+},500);
+
+
+
+/* =========================================================
+   VA7.0.1.4 FIX: 意味色を品詞色と同じ実装に統一
+   - 意味色の色バリエーション = TAG_COLORS と同じ
+   - 意味入力欄の下、削除ボタンの上に固定
+   - 監視JSの移動処理を停止してラグ/二重クリック感を防止
+========================================================= */
+
+function buildColorDots(colors, activeColor, className, handlerName){
+  return colors.map(color=>`
+    <button type="button" class="${className}${color===(activeColor||"")?" active":""}"
+      data-color="${color}" style="background:${color}"
+      onclick="${handlerName}(this,'${color}')"></button>
+  `).join("");
+}
+
+function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563",answerColor:"#4b5563"}){
+  let div=document.createElement("div");
+  div.className="wordRow";
+  div.dataset.tagColor=c.tagColor||"#4b5563";
+  div.dataset.answerColor=c.answerColor||"#4b5563";
+
+  const posColorButtons=buildColorDots(TAG_COLORS, div.dataset.tagColor, "rowColorDot", "selectRowColor");
+  const meaningColorButtons=buildColorDots(TAG_COLORS, div.dataset.answerColor, "meaningColorDot", "selectMeaningColor");
+
+  div.innerHTML=`
+    <div class="label">単語</div>
+    <input class="w" value="${escapeHtml(c.word||"")}" placeholder="apple">
+
+    <div class="label">品詞</div>
+    <select class="p">
+      <option value="">品詞を選択しない</option>
+      <option>動詞</option>
+      <option>自動詞</option>
+      <option>他動詞</option>
+      <option>名詞</option>
+      <option>形容詞</option>
+      <option>副詞</option>
+      <option>副詞節</option>
+      <option>熟語</option>
+      <option>句動詞</option>
+      <option>前置詞</option>
+      <option>接続詞</option>
+    </select>
+
+    <div class="rowColorWrap">
+      <button type="button" class="rowColorBtn" style="background:${div.dataset.tagColor}" onclick="toggleRowColorPalette(this)">品詞色を選択</button>
+      <div class="rowColorPalette">${posColorButtons}</div>
+    </div>
+
+    <div class="label">意味</div>
+    <textarea class="a" placeholder="りんご">${escapeHtml(c.answer||"")}</textarea>
+
+    <div class="meaningColorWrap">
+      <button type="button" class="meaningColorBtn" style="background:${div.dataset.answerColor}" onclick="toggleMeaningColorPalette(this)">意味色</button>
+      <div class="meaningColorPalette">${meaningColorButtons}</div>
+    </div>
+
+    <button class="red" onclick="this.parentElement.remove()">削除</button>
+  `;
+
+  $("rows").appendChild(div);
+  div.querySelector(".p").value=c.pos||"";
+}
+
+function toggleMeaningColorPalette(btn){
+  const pal=btn.parentElement.querySelector(".meaningColorPalette");
+  if(pal)pal.classList.toggle("show");
+}
+
+function selectMeaningColor(btn,color){
+  const row=btn.closest(".wordRow");
+  if(!row)return;
+
+  row.dataset.answerColor=color||"#4b5563";
+
+  const wrap=btn.closest(".meaningColorWrap");
+  if(wrap){
+    wrap.querySelectorAll(".meaningColorDot").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const main=wrap.querySelector(".meaningColorBtn");
+    if(main)main.style.background=color||"#4b5563";
+
+    const pal=wrap.querySelector(".meaningColorPalette");
+    if(pal)pal.classList.remove("show");
+  }
+}
+
+/* 古い意味色処理を停止：DOMを後から移動/追加しない */
+function syncMeaningColorPickers(){}
+function syncAnswerColorPickers(){}
+function addMeaningColorButtons(){}
+function relocateMeaningColorWrap(){}
+function alignMeaningColorButton(){}
+function moveMeaningButtonUnderMeaningInput(){}
+function fixMeaningPaletteSpacing(){}
+function bindMeaningColorStable(){}
+
+/* 既に開いている編集画面があれば古いcolor inputだけ消す */
+document.querySelectorAll(".answerColorPicker").forEach(el=>el.remove());
+
 </script>
 <div id="noticeContent" style="display:none">
 <div class="noticeItem">
-  <div>・Vr_a7.0.1.3 科目別UIを追加</div>
+  <div>・Vr_a7.0.1.4 科目別UIを追加</div>
   <div>・単語帳一覧に科目表示を追加</div>
   <div>・社会は品詞非表示</div>
   <div>・品詞「選択しない」を追加</div>
