@@ -5632,14 +5632,21 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
       try{
         // Chrome / Edge で speechSynthesis が paused のまま残ることがあるため毎回復帰させる。
         synth.resume();
-        const u=new SpeechSynthesisUtterance(text);
+        // 単語だけを裸で渡すと、一部の端末で語尾の音素が弱く潰れることがある。
+        // 読み上げ用だけ軽い継続ポーズを付け、最後の音まで発音させる。画面表示は変更しない。
+        const speechText=/[.!?。！？,…，]$/.test(text) ? text : (text + ',');
+        const u=new SpeechSynthesisUtterance(speechText);
         // voice は強制せず、端末・ブラウザ標準の英語音声を使用。
         u.lang='en-US';
-        u.rate=0.96;
+        // 単語学習では少しだけ遅くして、語尾の子音・弱母音まで潰れにくくする。
+        u.rate=0.91;
         u.pitch=1.0;
         u.volume=1.0;
         u.onstart=()=>setSpeakingUI(true);
-        u.onend=()=>setSpeakingUI(false);
+        u.onend=()=>{
+          // 発話終了直後にUIや次の音声処理を切り替えず、短い余韻を残す。
+          setTimeout(()=>setSpeakingUI(false),260);
+        };
         u.onerror=(ev)=>{
           setSpeakingUI(false);
           // 手動タップ時だけ、PC側で再生拒否された場合に原因が分かるよう通知。
@@ -5985,6 +5992,26 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
       if(notice && !notice.textContent.includes('Vr_a7.1.10')){
         const item=document.createElement('div');
         item.innerHTML='<div>・Vr_a7.1.10 学習画面とテスト画面の配置を少し下へ調整。カードを少し大きくし、操作ボタンの密集感を軽減</div>';
+        notice.insertBefore(item, notice.firstChild);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true}); else apply();
+})();
+</script>
+
+
+
+<script id="va7111-version">
+(function(){
+  function apply(){
+    try{
+      const v=document.getElementById('homeVersionText');
+      if(v)v.textContent='Vr_a7.1.11';
+      const notice=document.getElementById('noticeContent') || document.querySelector('.noticeContent');
+      if(notice && !notice.textContent.includes('Vr_a7.1.11')){
+        const item=document.createElement('div');
+        item.innerHTML='<div>・Vr_a7.1.11 読み上げの語尾が弱く潰れる問題を調整。最後の音まで発音しやすい発話形式に変更し、短い余韻も追加</div>';
         notice.insertBefore(item, notice.firstChild);
       }
     }catch(e){}
