@@ -5469,7 +5469,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
 </script>
 
 <style id="va715-tts-style">
-/* Vr_a7.1.6 読み上げ音質調整 */
+/* Vr_a7.1.8 読み上げ音質修正：端末標準の英語音声を使用 */
 #study .studyCard{position:relative}
 #study .ttsSpeakBtn{
   position:absolute;
@@ -5510,7 +5510,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
   #study .ttsAutoBar{margin-top:4px;margin-bottom:6px}
 }
 </style>
-<script id="va716-tts-script">
+<script id="va718-tts-script">
 (function(){
   'use strict';
   const TTS_KEY='va_tts_auto';
@@ -5609,7 +5609,14 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     if(on) speakingTimer=setTimeout(()=>{ if(b)b.classList.remove('speaking'); },3500);
   }
 
-  async function speakText(text){
+  function isAppleMobile(){
+    try{
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    }catch(e){return false;}
+  }
+
+  function speakText(text, fromUserGesture=false){
     text=String(text||'').trim();
     if(!text)return;
     if(!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance==='undefined'){
@@ -5617,38 +5624,56 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
       return;
     }
 
+    const synth=window.speechSynthesis;
     const mySerial=++speakSerial;
-    try{
-      await ensureVoices();
-      if(mySerial!==speakSerial)return;
 
-      // iOSでは cancel() 直後の speak() が途切れたり潰れたりすることがあるため少し間を置く。
-      window.speechSynthesis.cancel();
-      await new Promise(r=>setTimeout(r,75));
+    const startSpeak=()=>{
       if(mySerial!==speakSerial)return;
-
-      const u=new SpeechSynthesisUtterance(text);
-      u.lang='en-US';
-      // 遅すぎると機械的に伸びて聞こえるため、自然さを残しつつ学習向けの速度にする。
-      // 単語学習では少しだけゆっくり。声を引き伸ばしすぎず子音を聞き取りやすくする。
-      u.rate=0.88;
-      u.pitch=1.0;
-      u.volume=1.0;
-      const voice=pickEnglishVoice();
-      if(voice){
-        u.voice=voice;
-        if(voice.lang)u.lang=voice.lang;
+      try{
+        // Chrome / Edge で speechSynthesis が paused のまま残ることがあるため毎回復帰させる。
+        synth.resume();
+        const u=new SpeechSynthesisUtterance(text);
+        // voice は強制せず、端末・ブラウザ標準の英語音声を使用。
+        u.lang='en-US';
+        u.rate=0.96;
+        u.pitch=1.0;
+        u.volume=1.0;
+        u.onstart=()=>setSpeakingUI(true);
+        u.onend=()=>setSpeakingUI(false);
+        u.onerror=(ev)=>{
+          setSpeakingUI(false);
+          // 手動タップ時だけ、PC側で再生拒否された場合に原因が分かるよう通知。
+          if(fromUserGesture && ev && (ev.error==='not-allowed' || ev.error==='audio-busy')){
+            console.warn('TTS playback blocked:',ev.error);
+          }
+        };
+        synth.speak(u);
+        // Chromium系で稀に pause 状態へ戻るケースの保険。
+        setTimeout(()=>{try{ if(synth.paused)synth.resume(); }catch(e){}},60);
+      }catch(e){
+        setSpeakingUI(false);
+        console.warn('TTS error',e);
       }
-      u.onstart=()=>setSpeakingUI(true);
-      u.onend=()=>setSpeakingUI(false);
-      u.onerror=()=>setSpeakingUI(false);
-      window.speechSynthesis.speak(u);
-    }catch(e){ setSpeakingUI(false); }
+    };
+
+    try{
+      synth.cancel();
+      synth.resume();
+      refreshVoices();
+
+      // PCではユーザー操作中に同期的に speak() して再生ブロックを避ける。
+      // iPhone/iPadは従来どおり cancel() 直後の音切れ回避のため短い待ちを残す。
+      if(isAppleMobile()) setTimeout(startSpeak,75);
+      else startSpeak();
+    }catch(e){
+      setSpeakingUI(false);
+      console.warn('TTS prepare error',e);
+    }
   }
 
-  function speakCurrent(){
+  function speakCurrent(fromUserGesture=false){
     if(!isEnglishBook() || !englishIsVisible())return;
-    speakText(getCurrentEnglish());
+    speakText(getCurrentEnglish(),fromUserGesture);
   }
 
   function updateTTSUI(){
@@ -5685,7 +5710,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     localStorage.setItem(TTS_KEY,autoRead?'1':'0');
     lastAutoToken='';
     updateTTSUI();
-    if(autoRead)speakCurrent();
+    if(autoRead)speakCurrent(true);
     else if('speechSynthesis' in window){ speakSerial++; window.speechSynthesis.cancel(); }
   }
 
@@ -5699,7 +5724,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
       b.setAttribute('aria-label','英単語を読み上げ');
       b.title='英単語を読み上げ';
       b.textContent='🔊';
-      b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();speakCurrent();});
+      b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();speakCurrent(true);});
       card.appendChild(b);
     }
     const mode=document.querySelector('#study .modeSwitch');
@@ -5771,5 +5796,202 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
   else bump();
 })();
 </script>
+
+<script id="va718-version">
+(function(){
+  function apply(){
+    try{
+      const v=document.getElementById('homeVersionText');
+      if(v)v.textContent='Vr_a7.1.8';
+      const notice=document.getElementById('noticeContent') || document.querySelector('.noticeContent');
+      if(notice && !notice.textContent.includes('Vr_a7.1.8')){
+        const item=document.createElement('div');
+        item.innerHTML='<div>・Vr_a7.1.8 読み上げで不自然な声を強制選択する処理を廃止し、端末標準の英語音声へ戻しました</div>';
+        notice.insertBefore(item, notice.firstChild);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply); else apply();
+})();
+</script>
+
+<script id="va719-version">
+(function(){
+  function apply(){
+    try{
+      const v=document.getElementById('homeVersionText');
+      if(v)v.textContent='Vr_a7.1.9';
+      const notice=document.getElementById('noticeContent') || document.querySelector('.noticeContent');
+      if(notice && !notice.textContent.includes('Vr_a7.1.9')){
+        const item=document.createElement('div');
+        item.innerHTML='<div>・Vr_a7.1.9 PCで読み上げが無音になることがある問題を修正。手動再生をユーザー操作中に直接開始し、停止状態からの自動復帰も追加</div>';
+        notice.insertBefore(item, notice.firstChild);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply); else apply();
+})();
+</script>
+
+
+
+<style id="va7110-layout-style">
+/* Vr_a7.1.10 学習・テスト画面の配置を少し下へ、カードを少し大きく */
+#study,
+#testPlay{
+  padding-top:10px !important;
+  padding-bottom:22px !important;
+}
+
+#study .modeSwitch{
+  margin:8px 0 10px !important;
+}
+
+#study .ttsAutoBar{
+  margin:8px 2px 16px !important;
+}
+
+#study .studyCard{
+  min-height:250px !important;
+  padding:28px 16px 34px !important;
+  border-radius:30px !important;
+  margin-top:4px !important;
+}
+
+#study .pageInfo{
+  margin-bottom:12px !important;
+}
+
+#study .wordLine{
+  min-height:88px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#study .answer{
+  min-height:62px !important;
+}
+
+#study .studyMainControl{
+  margin:24px 0 0 !important;
+}
+
+#study .studySideControls{
+  margin:16px 0 0 !important;
+}
+
+#study #sliderPanel.sliders.show{
+  margin-top:16px !important;
+}
+
+#testPlay .studyCard{
+  min-height:640px !important;
+  justify-content:flex-start !important;
+  padding:64px 18px 34px !important;
+  border-radius:30px !important;
+  margin-top:12px !important;
+}
+
+#testPlay .pageInfo{
+  margin-bottom:32px !important;
+}
+
+#testPlay .word{
+  margin-top:0 !important;
+  margin-bottom:10px !important;
+}
+
+#testPlay .testChoices{
+  margin-top:26px !important;
+  gap:18px !important;
+}
+
+#testPlay .choice{
+  min-height:74px !important;
+  font-size:17px !important;
+  border-radius:20px !important;
+  padding:0 18px !important;
+}
+
+@media (max-width:600px){
+  #study,
+  #testPlay{
+    padding-top:14px !important;
+  }
+
+  #study .studyCard{
+    min-height:280px !important;
+    padding:32px 16px 38px !important;
+  }
+
+  #study .studyMainControl{
+    margin-top:28px !important;
+  }
+
+  #study .studySideControls{
+    margin-top:18px !important;
+  }
+
+  #testPlay .studyCard{
+    min-height:660px !important;
+    padding:72px 16px 36px !important;
+    margin-top:18px !important;
+  }
+
+  #testPlay .pageInfo{
+    margin-bottom:34px !important;
+  }
+
+  #testPlay .testChoices{
+    margin-top:28px !important;
+    gap:18px !important;
+  }
+}
+
+@media (max-width:430px){
+  #study .studyCard{
+    min-height:295px !important;
+    padding:34px 14px 42px !important;
+  }
+
+  #study .studyMainControl{
+    margin-top:30px !important;
+  }
+
+  #study .studySideControls{
+    margin-top:20px !important;
+  }
+
+  #testPlay .studyCard{
+    min-height:675px !important;
+    padding:78px 14px 38px !important;
+  }
+
+  #testPlay .choice{
+    min-height:72px !important;
+    font-size:16px !important;
+  }
+}
+</style>
+
+<script id="va7110-version">
+(function(){
+  function apply(){
+    try{
+      const v=document.getElementById('homeVersionText');
+      if(v)v.textContent='Vr_a7.1.10';
+      const notice=document.getElementById('noticeContent') || document.querySelector('.noticeContent');
+      if(notice && !notice.textContent.includes('Vr_a7.1.10')){
+        const item=document.createElement('div');
+        item.innerHTML='<div>・Vr_a7.1.10 学習画面とテスト画面の配置を少し下へ調整。カードを少し大きくし、操作ボタンの密集感を軽減</div>';
+        notice.insertBefore(item, notice.firstChild);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true}); else apply();
+})();
+</script>
+
 </body>
 </html><!-- v22.20 random memory v2: 1番目の連続偏りを強く軽減 -->
