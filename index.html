@@ -2109,6 +2109,16 @@ body.light #study .meaningNote{
   }
 }
 </style>
+
+<style id="va717-study-meaning-color">
+/* Vr_a7.1.7: 意味のデフォルト色は単語と同じ。個別の意味色選択はそのまま有効 */
+#study #answer .meaningParagraph,
+#study #answer .meaningNote,
+#study #word .meaningParagraph,
+#study #word .meaningNote{
+  color:inherit !important;
+}
+</style>
 </head>
 <body>
 <div class="app">
@@ -2651,12 +2661,26 @@ function tagShortByMode(pos,mode=currentBookMode()){
   return pos.slice(0,1);
 }
 function migrateBookModes(){
+  const meaningDefaultMigrationKey="va_meaning_default_v717";
+  const shouldMigrateMeaningDefault=localStorage.getItem(meaningDefaultMigrationKey)!=="1";
+  let meaningChanged=false;
   books.forEach(b=>{
     if(!b.mode)b.mode="english";
     (b.cards||[]).forEach(c=>{
       if(!c.tagColor)c.tagColor="#4b5563";
+      // これまで #4b5563 が意味色の初期値だったため、更新時に一度だけ「標準色」へ移行。
+      if(shouldMigrateMeaningDefault && String(c.answerColor||"").toLowerCase()==="#4b5563"){
+        c.answerColor="";
+        meaningChanged=true;
+      }
     });
   });
+  if(shouldMigrateMeaningDefault){
+    localStorage.setItem(meaningDefaultMigrationKey,"1");
+    if(meaningChanged){
+      try{ saveBooksWithBackup(books); }catch(e){ try{localStorage.setItem("books",JSON.stringify(books));}catch(_){} }
+    }
+  }
 }
 const TAG_COLORS=["#4b5563","#2563eb","#16a34a","#dc2626","#9333ea","#ea580c","#0891b2","#db2777","#ca8a04","#111827"];
 
@@ -4626,11 +4650,11 @@ function buildColorDots(colors, activeColor, className, handlerName){
   `).join("");
 }
 
-function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563",answerColor:"#4b5563"}){
+function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563",answerColor:""}){
   let div=document.createElement("div");
   div.className="wordRow";
   div.dataset.tagColor=c.tagColor||"#4b5563";
-  div.dataset.answerColor=c.answerColor||"#4b5563";
+  div.dataset.answerColor=c.answerColor||"";
 
   const posColorButtons=buildColorDots(TAG_COLORS, div.dataset.tagColor, "rowColorDot", "selectRowColor");
   const meaningColorButtons=buildColorDots(TAG_COLORS, div.dataset.answerColor, "meaningColorDot", "selectMeaningColor");
@@ -4664,7 +4688,7 @@ function addRow(c={word:"",pos:"",answer:"",tagColor:"#4b5563",answerColor:"#4b5
     <textarea class="a" placeholder="りんご">${escapeHtml(c.answer||"")}</textarea>
 
     <div class="meaningColorWrap">
-      <button type="button" class="meaningColorBtn" style="--meaning-color:${div.dataset.answerColor};background:${div.dataset.answerColor}" onclick="toggleMeaningColorPalette(this)">意味色</button>
+      <button type="button" class="meaningColorBtn" style="--meaning-color:${div.dataset.answerColor||'#4b5563'};background:${div.dataset.answerColor||'#4b5563'}" onclick="toggleMeaningColorPalette(this)">意味色</button>
       <div class="meaningColorPalette">${meaningColorButtons}</div>
     </div>
 
@@ -4749,10 +4773,10 @@ function normalizeNonePosValue(pos){
 }
 
 function getRowMeaningColor(row){
-  if(!row)return "#4b5563";
+  if(!row)return "";
   const wrap=row.querySelector(".meaningColorWrap");
   const btn=wrap?.querySelector(".meaningColorBtn");
-  let color=row.dataset.answerColor || btn?.style?.backgroundColor || "#4b5563";
+  let color=row.dataset.answerColor || "";
   const active=wrap?.querySelector(".meaningColorDot.active");
   if(active?.dataset?.color)color=active.dataset.color;
   row.dataset.answerColor=color;
@@ -4790,8 +4814,9 @@ function syncMeaningColorButtonColors(){
     const btn=wrap.querySelector(".meaningColorBtn");
     if(!row || !btn)return;
     const color=getRowMeaningColor(row);
-    btn.style.setProperty("--meaning-color", color);
-    btn.style.setProperty("background", color, "important");
+    const previewColor=color || "#4b5563";
+    btn.style.setProperty("--meaning-color", previewColor);
+    btn.style.setProperty("background", previewColor, "important");
     btn.dataset.color=color;
     wrap.querySelectorAll(".meaningColorDot").forEach(dot=>{
       dot.classList.toggle("active", String(dot.dataset.color||"").toLowerCase()===String(color||"").toLowerCase());
@@ -4810,7 +4835,7 @@ function saveBook(){
     pos:normalizeNonePosValue(r.querySelector(".p") ? r.querySelector(".p").value : ""),
     answer:r.querySelector(".a").value.trim(),
     tagColor:r.dataset.tagColor||"#4b5563",
-    answerColor:getRowMeaningColor(r)||"#4b5563"
+    answerColor:getRowMeaningColor(r)||""
   })).filter(c=>c.word&&c.answer);
 
   if(!confirmDuplicateWordsBeforeSave(nextCards)){
@@ -5444,7 +5469,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
 </script>
 
 <style id="va715-tts-style">
-/* Vr_a7.1.5 読み上げ */
+/* Vr_a7.1.6 読み上げ音質調整 */
 #study .studyCard{position:relative}
 #study .ttsSpeakBtn{
   position:absolute;
@@ -5485,13 +5510,16 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
   #study .ttsAutoBar{margin-top:4px;margin-bottom:6px}
 }
 </style>
-<script id="va715-tts-script">
+<script id="va716-tts-script">
 (function(){
   'use strict';
   const TTS_KEY='va_tts_auto';
   let autoRead=localStorage.getItem(TTS_KEY)==='1';
   let lastAutoToken='';
   let speakingTimer=null;
+  let voiceCache=[];
+  let voiceWaitPromise=null;
+  let speakSerial=0;
 
   function isEnglishBook(){
     try{ return typeof currentBookMode==='function' ? currentBookMode()==='english' : true; }catch(e){ return true; }
@@ -5511,14 +5539,67 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     }catch(e){return '';}
   }
 
-  function pickEnglishVoice(){
+  function refreshVoices(){
     try{
-      const voices=window.speechSynthesis?.getVoices?.()||[];
-      return voices.find(v=>/^en-US$/i.test(v.lang))
-        || voices.find(v=>/^en-GB$/i.test(v.lang))
-        || voices.find(v=>/^en/i.test(v.lang))
-        || null;
-    }catch(e){return null;}
+      const v=window.speechSynthesis?.getVoices?.()||[];
+      if(v.length)voiceCache=v.slice();
+    }catch(e){}
+    return voiceCache;
+  }
+
+  function voiceScore(v){
+    const lang=String(v.lang||'').toLowerCase();
+    const name=String(v.name||'').toLowerCase();
+    let score=0;
+    if(lang==='en-us')score+=120;
+    else if(lang.startsWith('en-us'))score+=115;
+    else if(lang==='en-gb')score+=85;
+    else if(lang.startsWith('en'))score+=60;
+    if(v.localService)score+=8;
+    if(v.default)score+=4;
+
+    // 表示名/URIに品質情報がある場合は、Enhanced / Premium / Neural / Natural 系を最優先。
+    const descriptor=(name+' '+String(v.voiceURI||'').toLowerCase());
+    if(/enhanced|premium|neural|natural|high quality|hq/.test(descriptor))score+=160;
+
+    // iPhone / macOS / Chrome / Edge で比較的自然に聞こえやすい英語音声を内部で優先。
+    const preferred=[
+      ['ava',95],['samantha',92],['allison',82],['susan',78],['zoe',76],
+      ['nathan',76],['tom',72],['daniel',68],['google us english',90],
+      ['microsoft aria',92],['microsoft jenny',88],['microsoft guy',78]
+    ];
+    for(const [needle,pts] of preferred){ if(descriptor.includes(needle)){score+=pts;break;} }
+
+    // Compact / 旧式 / 効果音系は学習用途ではかなり聞き取りにくいので強く避ける。
+    if(/compact|eloquence|novelty|whisper|bells|organ|bad news|good news|zarvox|trinoids|cellos|boing|bubbles/.test(descriptor))score-=320;
+    return score;
+  }
+
+  function pickEnglishVoice(){
+    const voices=refreshVoices();
+    const english=voices.filter(v=>/^en(?:-|$)/i.test(String(v.lang||'')));
+    if(!english.length)return null;
+    return english.slice().sort((a,b)=>voiceScore(b)-voiceScore(a))[0]||null;
+  }
+
+  function ensureVoices(){
+    if(refreshVoices().length)return Promise.resolve(voiceCache);
+    if(voiceWaitPromise)return voiceWaitPromise;
+    voiceWaitPromise=new Promise(resolve=>{
+      let done=false;
+      const finish=()=>{
+        if(done)return;
+        done=true;
+        try{window.speechSynthesis?.removeEventListener?.('voiceschanged',onChange);}catch(e){}
+        refreshVoices();
+        voiceWaitPromise=null;
+        resolve(voiceCache);
+      };
+      const onChange=()=>finish();
+      try{window.speechSynthesis?.addEventListener?.('voiceschanged',onChange,{once:true});}catch(e){}
+      setTimeout(finish,450);
+    });
+    return voiceWaitPromise;
   }
 
   function setSpeakingUI(on){
@@ -5528,21 +5609,36 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     if(on) speakingTimer=setTimeout(()=>{ if(b)b.classList.remove('speaking'); },3500);
   }
 
-  function speakText(text){
+  async function speakText(text){
     text=String(text||'').trim();
     if(!text)return;
     if(!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance==='undefined'){
       alert('このブラウザでは読み上げ機能を利用できません。');
       return;
     }
+
+    const mySerial=++speakSerial;
     try{
+      await ensureVoices();
+      if(mySerial!==speakSerial)return;
+
+      // iOSでは cancel() 直後の speak() が途切れたり潰れたりすることがあるため少し間を置く。
       window.speechSynthesis.cancel();
+      await new Promise(r=>setTimeout(r,75));
+      if(mySerial!==speakSerial)return;
+
       const u=new SpeechSynthesisUtterance(text);
       u.lang='en-US';
+      // 遅すぎると機械的に伸びて聞こえるため、自然さを残しつつ学習向けの速度にする。
+      // 単語学習では少しだけゆっくり。声を引き伸ばしすぎず子音を聞き取りやすくする。
       u.rate=0.88;
       u.pitch=1.0;
+      u.volume=1.0;
       const voice=pickEnglishVoice();
-      if(voice)u.voice=voice;
+      if(voice){
+        u.voice=voice;
+        if(voice.lang)u.lang=voice.lang;
+      }
       u.onstart=()=>setSpeakingUI(true);
       u.onend=()=>setSpeakingUI(false);
       u.onerror=()=>setSpeakingUI(false);
@@ -5580,7 +5676,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     lastAutoToken=token;
     setTimeout(()=>{
       if(autoRead && isEnglishBook() && englishIsVisible() && getCurrentEnglish()===text)speakText(text);
-    },80);
+    },110);
   }
 
   function toggleAutoRead(e){
@@ -5590,7 +5686,7 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
     lastAutoToken='';
     updateTTSUI();
     if(autoRead)speakCurrent();
-    else if('speechSynthesis' in window)window.speechSynthesis.cancel();
+    else if('speechSynthesis' in window){ speakSerial++; window.speechSynthesis.cancel(); }
   }
 
   function installUI(){
@@ -5623,8 +5719,8 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
   }
 
   function patchRender(){
-    if(typeof window.render==='function' && !window.__va715TtsRenderPatched){
-      window.__va715TtsRenderPatched=true;
+    if(typeof window.render==='function' && !window.__va716TtsRenderPatched){
+      window.__va716TtsRenderPatched=true;
       const old=window.render;
       window.render=function(){
         const r=old.apply(this,arguments);
@@ -5636,15 +5732,22 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
 
   function bumpVersion(){
     const v=document.getElementById('homeVersionText');
-    if(v)v.textContent='Vr_a7.1.5';
+    if(v)v.textContent='Vr_a7.1.6';
     const notice=document.getElementById('noticeContent');
-    if(notice && !notice.textContent.includes('Vr_a7.1.5')){
+    if(notice && !notice.textContent.includes('Vr_a7.1.6')){
       const item=notice.querySelector('.noticeItem')||notice;
-      item.insertAdjacentHTML('afterbegin','<div>・Vr_a7.1.5 英単語の🔊読み上げと、自動読み上げON/OFFを追加</div>');
+      item.insertAdjacentHTML('afterbegin','<div>・Vr_a7.1.6 読み上げ音声を高品質寄りに自動最適化。学習画面の意味を単語と同じ文字色に統一</div>');
     }
   }
 
-  function init(){ installUI(); patchRender(); bumpVersion(); updateTTSUI(); }
+  function init(){
+    refreshVoices();
+    try{window.speechSynthesis?.addEventListener?.('voiceschanged',refreshVoices);}catch(e){}
+    installUI();
+    patchRender();
+    bumpVersion();
+    updateTTSUI();
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 
@@ -5652,5 +5755,21 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
 })();
 </script>
 
+
+<script id="va717-version-script">
+(function(){
+  function bump(){
+    const v=document.getElementById('homeVersionText');
+    if(v)v.textContent='Vr_a7.1.7';
+    const notice=document.getElementById('noticeContent');
+    if(notice && !notice.textContent.includes('Vr_a7.1.7')){
+      const item=notice.querySelector('.noticeItem')||notice;
+      item.insertAdjacentHTML('afterbegin','<div>・Vr_a7.1.7 意味色の初期値を灰色から単語と同じ標準文字色へ変更。意味色の個別選択は継続</div>');
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bump,{once:true});
+  else bump();
+})();
+</script>
 </body>
 </html><!-- v22.20 random memory v2: 1番目の連続偏りを強く軽減 -->
