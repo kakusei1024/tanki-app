@@ -66,32 +66,6 @@ body.light .bottomNav{background:white;border:1px solid #ccc}
 body.light .nav{color:#111;text-shadow:0 0 3px white}
 .nav span{display:block;font-size:11px}.nav.active{background:linear-gradient(90deg,#007bff,#26d0ff);color:white}
 
-
-/* 学習画面：ボタン群をもう少し下へ */
-#study.active{
-  display:flex;
-  flex-direction:column;
-  min-height:calc(100vh - 138px);
-}
-
-.studyCard{
-  margin-top:10px;
-}
-
-.studyMainControl{
-  margin-top:auto;
-  margin-bottom:8px;
-}
-
-#sideStepControls{
-  margin-top:6px;
-}
-
-.moveRow{
-  margin-top:8px;
-}
-
-
 /* 学習画面：左右操作パネル */
 .studySideControls{
   display:grid;
@@ -5660,16 +5634,14 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
         synth.resume();
         // 単語だけを裸で渡すと、一部の端末で語尾の音素が弱く潰れることがある。
         // 読み上げ用だけ軽い継続ポーズを付け、最後の音まで発音させる。画面表示は変更しない。
-        const speechText=/[.!?。！？,…，]$/.test(text) ? text : (text + '…');
+        const speechText=/[.!?。！？,…，]$/.test(text) ? text : (text + ',');
         const u=new SpeechSynthesisUtterance(speechText);
-        // 端末に明瞭な英語音声がある場合は優先して使う。
+        // 声質は端末標準の英語音声へ戻す。
         u.lang='en-US';
-        const clearVoice=pickEnglishVoice();
-        if(clearVoice)u.voice=clearVoice;
         // 単語だけは少しゆっくり。特に -ing / -n / -m など語尾の鼻音が消えにくい速さにする。
         // フレーズは遅くしすぎない。
         const isSingleWord=!/\s/.test(text);
-        u.rate=isSingleWord ? 0.84 : 0.90;
+        u.rate=isSingleWord ? 0.89 : 0.92;
         u.pitch=1.0;
         u.volume=1.0;
         u.onstart=()=>setSpeakingUI(true);
@@ -6549,6 +6521,84 @@ body.light .meaningColorSameBtn.active{
   }else{
     bumpVersion();
   }
+})();
+</script>
+
+
+<style id="va7119-study-controls-lower">
+/* Vr_a7.1.19: 単語カード位置は維持しつつ、答え/次へボタン以降を下へ寄せる */
+#study.active{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:calc(100vh - 172px) !important;
+  padding-bottom:calc(22px + env(safe-area-inset-bottom)) !important;
+}
+
+#study .modeSwitch,
+#study .ttsAutoBar,
+#study .studyCard{
+  flex:0 0 auto !important;
+}
+
+#study .studyCard{
+  margin-top:4px !important;
+}
+
+#study .studyMainControl{
+  margin-top:auto !important;
+  margin-bottom:0 !important;
+  padding-top:34px !important;
+}
+
+#study .studySideControls{
+  margin-top:18px !important;
+  margin-bottom:0 !important;
+}
+
+#study #sliderPanel.sliders.show{
+  margin-top:18px !important;
+}
+
+@media (max-width:600px){
+  #study.active{
+    min-height:calc(100vh - 166px) !important;
+  }
+  #study .studyMainControl{
+    padding-top:42px !important;
+  }
+  #study .studySideControls{
+    margin-top:20px !important;
+  }
+}
+
+@media (max-width:430px){
+  #study.active{
+    min-height:calc(100vh - 158px) !important;
+  }
+  #study .studyMainControl{
+    padding-top:52px !important;
+  }
+  #study .studySideControls{
+    margin-top:22px !important;
+  }
+}
+</style>
+
+<script id="va7119-version">
+(function(){
+  function apply(){
+    try{
+      const v=document.getElementById('homeVersionText');
+      if(v)v.textContent='Vr_a7.1.19';
+      const notice=document.getElementById('noticeContent') || document.querySelector('.noticeContent');
+      if(notice && !notice.textContent.includes('Vr_a7.1.19')){
+        const item=document.createElement('div');
+        item.innerHTML='<div>・Vr_a7.1.19 読み上げ音声を端末標準へ戻し、語尾の聞き取りやすさは維持。単語カードの高さはそのまま、答え/次へボタン以降を下側へ大きく移動</div>';
+        notice.insertBefore(item, notice.firstChild);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true}); else apply();
 })();
 </script>
 
