@@ -6456,5 +6456,37 @@ body.light .meaningColorSameBtn.active{
   },500);
 })();
 </script>
+
+
+<script id="va715-color-hold-fix">
+(function(){
+  /*
+    Vr_a7.1.15
+    旧処理 applySavedMeaningColorsToRows() が1秒ごとに保存済み色を
+    編集中の行へ書き戻していたため、未保存の色変更が元に戻る問題を停止。
+    行の初期色は addRow(card) の c.answerColor から既に復元されるため、
+    この定期上書きは不要。
+  */
+  window.applySavedMeaningColorsToRows=function(){};
+
+  function bumpVersion(){
+    const v=document.getElementById('homeVersionText');
+    if(v)v.textContent='Vr_a7.1.15';
+    const notice=document.getElementById('noticeContent');
+    if(notice && !notice.textContent.includes('Vr_a7.1.15')){
+      const item=document.createElement('div');
+      item.className='noticeItem';
+      item.innerHTML='<div>・Vr_a7.1.15 意味色を変更した直後に、保存前の古い色へ勝手に戻る不具合を修正</div>';
+      notice.insertBefore(item,notice.firstChild);
+    }
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',bumpVersion,{once:true});
+  }else{
+    bumpVersion();
+  }
+})();
+</script>
+
 </body>
 </html><!-- v22.20 random memory v2: 1番目の連続偏りを強く軽減 -->
