@@ -6020,5 +6020,441 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
 })();
 </script>
 
+
+
+<style id="va712-bulk-range-style">
+/* Vr_a7.1.12: 一括かんたん登録 + 編集範囲表示 */
+#vaQuickEntry .vaQuickSub{line-height:1.55}
+#vaBulkInput{
+  width:100%; min-height:132px; resize:vertical; font-size:16px; line-height:1.55;
+  padding:13px 14px; border-radius:16px; margin:10px 0 8px;
+}
+#vaQuickEntry .vaBulkActions{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:stretch}
+#vaQuickEntry .vaBulkActions button{min-height:52px}
+#vaBulkPreview{font-size:13px;line-height:1.55;margin-top:8px;white-space:pre-wrap;word-break:break-word}
+#vaEditRange{
+  margin:14px 0 16px; padding:14px; border:1px solid rgba(120,120,120,.28);
+  border-radius:18px; background:rgba(255,255,255,.035);
+}
+body.light #vaEditRange{background:#f8fafc;border-color:#dbe3ec}
+#vaEditRange .vaRangeTitle{font-weight:800;font-size:16px;margin-bottom:6px}
+#vaEditRange .vaRangeSub{font-size:12px;opacity:.72;line-height:1.45;margin-bottom:10px}
+#vaEditRange .vaRangeMain{display:grid;grid-template-columns:1fr 24px 1fr 82px;gap:7px;align-items:center}
+#vaEditRange input{min-width:0;height:48px !important;text-align:center;font-size:16px !important;padding:0 8px !important}
+#vaEditRange .vaRangeDash{text-align:center;opacity:.7}
+#vaEditRange .vaRangeNav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:8px}
+#vaEditRange .vaRangeNav button{min-height:42px;padding:8px 6px;font-size:13px}
+#vaRangeStatus{font-size:12px;opacity:.72;margin-top:8px;text-align:center}
+#rows .wordRow{position:relative}
+#rows .vaRowIndex{
+  position:absolute;top:10px;right:12px;font-size:12px;font-weight:800;opacity:.48;
+  pointer-events:none;
+}
+@media(max-width:430px){
+  #vaQuickEntry .vaBulkActions{grid-template-columns:1fr 92px}
+  #vaEditRange .vaRangeMain{grid-template-columns:1fr 18px 1fr 72px;gap:5px}
+  #vaEditRange .vaRangeMain button{padding-left:6px;padding-right:6px}
+}
+</style>
+
+<script id="va712-bulk-range-script">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const isJa=ch=>/[\u3040-\u30ff\u3400-\u9fff々〆ヶ]/.test(ch);
+  const isEn=ch=>/[A-Za-z]/.test(ch);
+  const cleanWord=s=>String(s||'')
+    .replace(/^[\s\d０-９.．、,，:：;；|｜→⇒＝=\-–—]+/,'')
+    .replace(/[\s|｜:：=＝,，、/／→⇒]+$/,'').trim();
+  const cleanAnswer=s=>String(s||'')
+    .replace(/^[\s|｜:：=＝,，、/／→⇒\-–—]+/,'')
+    .replace(/[\s|｜:：=＝,，、/／→⇒]+$/,'').trim();
+
+  function parseBulkPairs(raw){
+    const text=String(raw||'').normalize('NFKC').replace(/\r/g,'');
+    const pairs=[];
+    let state='seek', word='', answer='';
+    const finish=()=>{
+      const w=cleanWord(word), a=cleanAnswer(answer);
+      if(w && a && /[A-Za-z]/.test(w) && /[\u3040-\u30ff\u3400-\u9fff々〆ヶ]/.test(a)) pairs.push({word:w,answer:a});
+      word=''; answer='';
+    };
+    for(const ch of text){
+      if(state==='seek'){
+        if(isEn(ch)){word=ch;state='en';}
+        continue;
+      }
+      if(state==='en'){
+        if(isJa(ch)){answer=ch;state='ja';}
+        else word+=ch;
+        continue;
+      }
+      if(state==='ja'){
+        if(isEn(ch)){
+          finish();
+          word=ch; answer=''; state='en';
+        }else answer+=ch;
+      }
+    }
+    if(state==='ja')finish();
+    return pairs;
+  }
+
+  function normalizeWord(s){
+    if(typeof window.normalizeWordForDuplicateCheck==='function') return window.normalizeWordForDuplicateCheck(s);
+    return String(s||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
+  }
+
+  function currentRows(){return [...document.querySelectorAll('#rows .wordRow')];}
+
+  function addPairToRows(pair){
+    let rows=currentRows();
+    let target=rows.find(r=>{
+      const w=r.querySelector('.w'),a=r.querySelector('.a');
+      return w&&a&&!w.value.trim()&&!a.value.trim();
+    });
+    if(!target){
+      if(typeof window.addRow==='function') window.addRow();
+      else if(typeof addRow==='function') addRow();
+      rows=currentRows(); target=rows[rows.length-1];
+    }
+    if(!target)return false;
+    const w=target.querySelector('.w'),a=target.querySelector('.a');
+    if(w)w.value=pair.word;
+    if(a)a.value=pair.answer;
+    return true;
+  }
+
+  function paintBulkPreview(){
+    const input=$('vaBulkInput'), status=$('vaQuickStatus'), preview=$('vaBulkPreview');
+    if(!input||!status)return;
+    const pairs=parseBulkPairs(input.value);
+    if(!input.value.trim()){
+      status.className='vaQuickStatus';
+      status.textContent='例：possibly おそらく／もしかすると　nevertheless それにもかかわらず';
+      if(preview)preview.textContent='';
+      return;
+    }
+    if(!pairs.length){
+      status.className='vaQuickStatus warn';
+      status.textContent='英語 → 日本語 の順で貼り付けてください';
+      if(preview)preview.textContent='';
+      return;
+    }
+    status.className='vaQuickStatus ok';
+    status.textContent='✓ '+pairs.length+'件を認識しました';
+    if(preview){
+      const sample=pairs.slice(0,4).map((p,i)=>(i+1)+'. '+p.word+' → '+p.answer).join('\n');
+      preview.textContent=sample+(pairs.length>4?'\n…ほか '+(pairs.length-4)+'件':'');
+    }
+  }
+
+  function commitBulk(){
+    const input=$('vaBulkInput'),status=$('vaQuickStatus');
+    if(!input)return;
+    const pairs=parseBulkPairs(input.value);
+    if(!pairs.length){paintBulkPreview();return;}
+
+    const existing=new Set(currentRows().map(r=>normalizeWord(r.querySelector('.w')?.value)).filter(Boolean));
+    const seen=new Set();
+    const duplicates=[];
+    for(const p of pairs){
+      const n=normalizeWord(p.word);
+      if(existing.has(n)||seen.has(n))duplicates.push(p.word);
+      seen.add(n);
+    }
+    if(duplicates.length){
+      const names=[...new Set(duplicates)].slice(0,8).join('、');
+      if(!confirm('重複候補が '+duplicates.length+'件あります。\n'+names+(duplicates.length>8?' ほか':'')+'\n\nそれでも一括追加しますか？'))return;
+    }
+
+    let added=0;
+    pairs.forEach(p=>{if(addPairToRows(p))added++;});
+    renumberRows();
+    const total=currentRows().filter(r=>r.querySelector('.w')?.value.trim()||r.querySelector('.a')?.value.trim()).length;
+    if(status){status.className='vaQuickStatus ok';status.textContent='✓ '+added+'件追加しました。最後に「保存」を押してください';}
+    input.value='';
+    const preview=$('vaBulkPreview');if(preview)preview.textContent='';
+    updateRangeBounds();
+    // 追加直後は末尾5件を見せる
+    if(total>0){
+      const from=Math.max(1,total-4); setRange(from,total); applyRange();
+    }
+  }
+
+  function upgradeQuickPanel(){
+    const panel=$('vaQuickEntry');
+    if(!panel||$('vaBulkInput'))return;
+    panel.innerHTML=`
+      <div class="vaQuickTitle">かんたん一括登録</div>
+      <div class="vaQuickSub">英語→日本語を続けて貼るだけ。日本語のあとに次の英語が来たら、自動で別の単語として分けます。改行・スペースどちらでもOK。</div>
+      <textarea id="vaBulkInput" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="possibly おそらく／もしかすると\nnevertheless それにもかかわらず／それでも\ninsurance 保険"></textarea>
+      <div class="vaBulkActions"><div id="vaQuickStatus" class="vaQuickStatus">貼り付けると自動で認識します</div><button id="vaBulkAdd" type="button" class="blue vaQuickAdd">まとめて追加</button></div>
+      <div id="vaBulkPreview"></div>`;
+    $('vaBulkInput')?.addEventListener('input',paintBulkPreview);
+    $('vaBulkAdd')?.addEventListener('click',commitBulk);
+  }
+
+  function renumberRows(){
+    currentRows().forEach((r,i)=>{
+      let badge=r.querySelector('.vaRowIndex');
+      if(!badge){badge=document.createElement('span');badge.className='vaRowIndex';r.appendChild(badge);}
+      badge.textContent='#'+(i+1);
+      r.dataset.vaIndex=String(i+1);
+    });
+  }
+
+  function nonemptyCount(){
+    const rows=currentRows();
+    let last=rows.length;
+    while(last>1){
+      const r=rows[last-1],w=r.querySelector('.w')?.value.trim(),a=r.querySelector('.a')?.value.trim();
+      if(w||a)break;last--;
+    }
+    return Math.max(1,last);
+  }
+
+  function updateRangeBounds(){
+    const max=nonemptyCount();
+    const f=$('vaRangeFrom'),t=$('vaRangeTo');
+    if(f){f.max=max;if(Number(f.value)>max)f.value=max;}
+    if(t){t.max=max;if(Number(t.value)>max)t.value=max;}
+    const st=$('vaRangeStatus');if(st)st.textContent='全 '+max+'件';
+    renumberRows();
+  }
+
+  function setRange(from,to){
+    const max=nonemptyCount();
+    from=Math.max(1,Math.min(max,Number(from)||1));
+    to=Math.max(from,Math.min(max,Number(to)||from));
+    if($('vaRangeFrom'))$('vaRangeFrom').value=from;
+    if($('vaRangeTo'))$('vaRangeTo').value=to;
+  }
+
+  function applyRange(){
+    const rows=currentRows(),max=nonemptyCount();
+    let from=Math.max(1,Number($('vaRangeFrom')?.value)||1);
+    let to=Math.max(from,Number($('vaRangeTo')?.value)||Math.min(5,max));
+    from=Math.min(from,max);to=Math.min(to,max);setRange(from,to);
+    rows.forEach((r,i)=>{r.style.display=(i+1>=from&&i+1<=to)?'':'none';});
+    const st=$('vaRangeStatus');if(st)st.textContent=from+'〜'+to+' を表示 / 全 '+max+'件';
+  }
+
+  function showAllRows(){
+    currentRows().forEach(r=>r.style.display='');
+    const max=nonemptyCount();setRange(1,max);
+    const st=$('vaRangeStatus');if(st)st.textContent='全 '+max+'件を表示';
+  }
+
+  function shiftRange(dir){
+    const max=nonemptyCount();
+    let from=Number($('vaRangeFrom')?.value)||1,to=Number($('vaRangeTo')?.value)||Math.min(5,max);
+    const size=Math.max(1,to-from+1);
+    if(dir>0){from=Math.min(max,from+size);to=Math.min(max,from+size-1);}
+    else{from=Math.max(1,from-size);to=Math.min(max,from+size-1);}
+    setRange(from,to);applyRange();
+  }
+
+  function ensureRangePanel(){
+    const rows=$('rows');if(!rows||$('vaEditRange'))return;
+    const panel=document.createElement('div');panel.id='vaEditRange';
+    panel.innerHTML=`
+      <div class="vaRangeTitle">編集する範囲</div>
+      <div class="vaRangeSub">例：1〜5を開く → 次へで6〜10。表示していない単語も保存時に消えません。</div>
+      <div class="vaRangeMain"><input id="vaRangeFrom" type="number" min="1" inputmode="numeric" value="1"><div class="vaRangeDash">〜</div><input id="vaRangeTo" type="number" min="1" inputmode="numeric" value="5"><button id="vaRangeOpen" type="button" class="blue">開く</button></div>
+      <div class="vaRangeNav"><button id="vaRangePrev" type="button" class="dark">← 前</button><button id="vaRangeAll" type="button" class="dark">全部</button><button id="vaRangeNext" type="button" class="dark">次 →</button></div>
+      <div id="vaRangeStatus">範囲を選んで「開く」</div>`;
+    rows.insertAdjacentElement('beforebegin',panel);
+    $('vaRangeOpen')?.addEventListener('click',applyRange);
+    $('vaRangePrev')?.addEventListener('click',()=>shiftRange(-1));
+    $('vaRangeNext')?.addEventListener('click',()=>shiftRange(1));
+    $('vaRangeAll')?.addEventListener('click',showAllRows);
+    updateRangeBounds();
+  }
+
+  function applyDefaultEditRange(){
+    upgradeQuickPanel();ensureRangePanel();updateRangeBounds();
+    const max=nonemptyCount();setRange(1,Math.min(5,max));applyRange();
+  }
+
+  function patchOpenEditor(){
+    if(window.__va712OpenEditorPatched)return;
+    const old=window.openEditor;
+    if(typeof old!=='function')return;
+    window.__va712OpenEditorPatched=true;
+    window.openEditor=function(){
+      const r=old.apply(this,arguments);
+      setTimeout(applyDefaultEditRange,30);
+      return r;
+    };
+  }
+
+  function observeRows(){
+    const rows=$('rows');if(!rows||rows.dataset.va712Observed)return;
+    rows.dataset.va712Observed='1';
+    const ob=new MutationObserver(()=>{renumberRows();updateRangeBounds();});
+    ob.observe(rows,{childList:true});
+  }
+
+  function bumpVersion(){
+    const v=$('homeVersionText');if(v)v.textContent='Vr_a7.1.12';
+    const notice=$('noticeContent');
+    if(notice&&!notice.textContent.includes('Vr_a7.1.12')){
+      const item=document.createElement('div');
+      item.innerHTML='<div>・Vr_a7.1.12 英語→日本語の大量貼り付けを自動分割する一括登録と、1〜5 / 6〜10のような編集範囲表示を追加</div>';
+      notice.insertBefore(item,notice.firstChild);
+    }
+  }
+
+  function init(){
+    // 既存の簡単登録が作られた後に置き換える
+    setTimeout(()=>{
+      upgradeQuickPanel();ensureRangePanel();observeRows();patchOpenEditor();bumpVersion();
+      if($('edit')?.classList.contains('active'))applyDefaultEditRange();
+    },20);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
+
+
+<style id="va714-meaning-white-style">
+/* Vr_a7.1.14: 「単語と同じ」を文字ではなく白い色見本で選べるように変更 */
+.meaningColorSameBtn{
+  width:32px !important;
+  min-width:32px !important;
+  height:32px !important;
+  padding:0 !important;
+  border-radius:7px !important;
+  border:2px solid #9ca3af !important;
+  background:#ffffff !important;
+  color:transparent !important;
+  font-size:0 !important;
+  box-sizing:border-box !important;
+}
+.meaningColorSameBtn.active{
+  border-color:#ffffff !important;
+  box-shadow:0 0 0 3px rgba(59,130,246,.95) !important;
+}
+body.light .meaningColorSameBtn{
+  border-color:#6b7280 !important;
+}
+body.light .meaningColorSameBtn.active{
+  border-color:#111827 !important;
+}
+</style>
+<script id="va714-meaning-white-script">
+(function(){
+  function setMainDefaultVisual(main){
+    if(!main)return;
+    main.textContent='意味色';
+    main.dataset.color='';
+    main.style.setProperty('--meaning-color','#ffffff');
+    main.style.setProperty('background','#ffffff','important');
+    main.style.setProperty('color','#111827','important');
+    main.style.setProperty('border-color','#9ca3af','important');
+  }
+
+  function setMainColorVisual(main,color){
+    if(!main)return;
+    main.textContent='意味色';
+    main.dataset.color=color;
+    main.style.setProperty('--meaning-color',color);
+    main.style.setProperty('background',color,'important');
+    main.style.removeProperty('color');
+    main.style.removeProperty('border-color');
+  }
+
+  function ensureMeaningSameOption(){
+    document.querySelectorAll('.meaningColorWrap').forEach(wrap=>{
+      const pal=wrap.querySelector('.meaningColorPalette');
+      const row=wrap.closest('.wordRow');
+      if(!pal || !row)return;
+      let same=pal.querySelector('.meaningColorSameBtn');
+      if(!same){
+        same=document.createElement('button');
+        same.type='button';
+        same.className='meaningColorSameBtn';
+        same.dataset.color='';
+        same.setAttribute('aria-label','標準の白色');
+        same.title='白（標準）';
+        same.onclick=function(ev){
+          ev.preventDefault();
+          ev.stopPropagation();
+          row.dataset.answerColor='';
+          pal.querySelectorAll('.meaningColorDot,.meaningColorSameBtn').forEach(b=>b.classList.remove('active'));
+          same.classList.add('active');
+          setMainDefaultVisual(wrap.querySelector('.meaningColorBtn'));
+          pal.classList.add('show');
+        };
+        pal.insertBefore(same,pal.firstChild);
+      }else{
+        same.textContent='';
+        same.title='白（標準）';
+        same.setAttribute('aria-label','標準の白色');
+      }
+    });
+  }
+
+  window.selectMeaningColor=function(btn,color){
+    const row=btn.closest('.wordRow');
+    if(!row)return;
+    const nextColor=String(color||'');
+    row.dataset.answerColor=nextColor;
+    const wrap=btn.closest('.meaningColorWrap');
+    if(wrap){
+      wrap.querySelectorAll('.meaningColorDot,.meaningColorSameBtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const main=wrap.querySelector('.meaningColorBtn');
+      if(nextColor)setMainColorVisual(main,nextColor); else setMainDefaultVisual(main);
+      const pal=wrap.querySelector('.meaningColorPalette');
+      if(pal)pal.classList.add('show');
+    }
+  };
+
+  window.getRowMeaningColor=function(row){
+    if(!row)return '';
+    return String(row.dataset.answerColor||'');
+  };
+
+  window.syncMeaningColorButtonColors=function(){
+    ensureMeaningSameOption();
+    document.querySelectorAll('.meaningColorWrap').forEach(wrap=>{
+      const row=wrap.closest('.wordRow');
+      const btn=wrap.querySelector('.meaningColorBtn');
+      if(!row || !btn)return;
+      const color=String(row.dataset.answerColor||'');
+      const same=wrap.querySelector('.meaningColorSameBtn');
+      wrap.querySelectorAll('.meaningColorDot').forEach(dot=>{
+        dot.classList.toggle('active', !!color && String(dot.dataset.color||'').toLowerCase()===color.toLowerCase());
+      });
+      if(same)same.classList.toggle('active',!color);
+      if(color)setMainColorVisual(btn,color); else setMainDefaultVisual(btn);
+    });
+  };
+
+  function bumpVersion(){
+    const v=document.getElementById('homeVersionText');
+    if(v)v.textContent='Vr_a7.1.14';
+    const notice=document.getElementById('noticeContent');
+    if(notice && !notice.textContent.includes('Vr_a7.1.14')){
+      const item=document.createElement('div');
+      item.className='noticeItem';
+      item.innerHTML='<div>・Vr_a7.1.14 意味色の標準色を「単語と同じ」という文字ボタンから、ひと目で分かる白い四角の色見本に変更しました</div>';
+      notice.insertBefore(item,notice.firstChild);
+    }
+  }
+
+  setTimeout(()=>{ensureMeaningSameOption();syncMeaningColorButtonColors();bumpVersion();},80);
+  setInterval(()=>{
+    const edit=document.getElementById('edit');
+    if(edit && edit.classList.contains('active')){
+      ensureMeaningSameOption();
+      syncMeaningColorButtonColors();
+    }
+  },500);
+})();
+</script>
 </body>
 </html><!-- v22.20 random memory v2: 1番目の連続偏りを強く軽減 -->
