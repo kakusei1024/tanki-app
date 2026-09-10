@@ -66,6 +66,32 @@ body.light .bottomNav{background:white;border:1px solid #ccc}
 body.light .nav{color:#111;text-shadow:0 0 3px white}
 .nav span{display:block;font-size:11px}.nav.active{background:linear-gradient(90deg,#007bff,#26d0ff);color:white}
 
+
+/* 学習画面：ボタン群をもう少し下へ */
+#study.active{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100vh - 138px);
+}
+
+.studyCard{
+  margin-top:10px;
+}
+
+.studyMainControl{
+  margin-top:auto;
+  margin-bottom:8px;
+}
+
+#sideStepControls{
+  margin-top:6px;
+}
+
+.moveRow{
+  margin-top:8px;
+}
+
+
 /* 学習画面：左右操作パネル */
 .studySideControls{
   display:grid;
@@ -5634,12 +5660,16 @@ body.light .vaQuickEntry{background:#f0f9ff;border-color:#bae6fd}
         synth.resume();
         // 単語だけを裸で渡すと、一部の端末で語尾の音素が弱く潰れることがある。
         // 読み上げ用だけ軽い継続ポーズを付け、最後の音まで発音させる。画面表示は変更しない。
-        const speechText=/[.!?。！？,…，]$/.test(text) ? text : (text + ',');
+        const speechText=/[.!?。！？,…，]$/.test(text) ? text : (text + '…');
         const u=new SpeechSynthesisUtterance(speechText);
-        // voice は強制せず、端末・ブラウザ標準の英語音声を使用。
+        // 端末に明瞭な英語音声がある場合は優先して使う。
         u.lang='en-US';
-        // 単語学習では少しだけ遅くして、語尾の子音・弱母音まで潰れにくくする。
-        u.rate=0.91;
+        const clearVoice=pickEnglishVoice();
+        if(clearVoice)u.voice=clearVoice;
+        // 単語だけは少しゆっくり。特に -ing / -n / -m など語尾の鼻音が消えにくい速さにする。
+        // フレーズは遅くしすぎない。
+        const isSingleWord=!/\s/.test(text);
+        u.rate=isSingleWord ? 0.84 : 0.90;
         u.pitch=1.0;
         u.volume=1.0;
         u.onstart=()=>setSpeakingUI(true);
@@ -6073,13 +6103,36 @@ body.light #vaEditRange{background:#f8fafc;border-color:#dbe3ec}
   function parseBulkPairs(raw){
     const text=String(raw||'').normalize('NFKC').replace(/\r/g,'');
     const pairs=[];
-    let state='seek', word='', answer='';
+
+    // Vr_a7.1.16: まず「1行=1単語」を最優先で解釈する。
+    // これにより「found 設立する／見つけた（findの過去形）」の find を
+    // 次の単語として誤認しない。
+    const lines=text.split(/\n+/).map(v=>v.trim()).filter(Boolean);
+    if(lines.length>1){
+      for(const line of lines){
+        const jaPos=[...line].findIndex(ch=>isJa(ch));
+        if(jaPos<0) continue;
+        const chars=[...line];
+        const w=cleanWord(chars.slice(0,jaPos).join(''));
+        const a=cleanAnswer(chars.slice(jaPos).join(''));
+        if(w && a && /[A-Za-z]/.test(w) && /[\u3040-\u30ff\u3400-\u9fff々〆ヶ]/.test(a)) pairs.push({word:w,answer:a});
+      }
+      if(pairs.length) return pairs;
+    }
+
+    // 改行がない貼り付け用のフォールバック。
+    // 日本語の括弧内にある英語は意味の一部として保持する。
+    let state='seek', word='', answer='', bracketDepth=0;
+    const openBrackets='（([【「『〈《〔［｛{';
+    const closeBrackets='）)]】」』〉》〕］｝}';
     const finish=()=>{
       const w=cleanWord(word), a=cleanAnswer(answer);
       if(w && a && /[A-Za-z]/.test(w) && /[\u3040-\u30ff\u3400-\u9fff々〆ヶ]/.test(a)) pairs.push({word:w,answer:a});
-      word=''; answer='';
+      word=''; answer=''; bracketDepth=0;
     };
-    for(const ch of text){
+    const chars=[...text];
+    for(let i=0;i<chars.length;i++){
+      const ch=chars[i];
       if(state==='seek'){
         if(isEn(ch)){word=ch;state='en';}
         continue;
@@ -6090,7 +6143,18 @@ body.light #vaEditRange{background:#f8fafc;border-color:#dbe3ec}
         continue;
       }
       if(state==='ja'){
-        if(isEn(ch)){
+        if(openBrackets.includes(ch)){bracketDepth++;answer+=ch;continue;}
+        if(closeBrackets.includes(ch)){bracketDepth=Math.max(0,bracketDepth-1);answer+=ch;continue;}
+        if(isEn(ch) && bracketDepth===0){
+          // 「findの過去形」のように英語の直後が日本語なら意味内英語とみなす。
+          let j=i;
+          while(j<chars.length && /[A-Za-z'\-]/.test(chars[j])) j++;
+          const next=chars[j]||'';
+          if(isJa(next)){
+            while(i<j){answer+=chars[i];i++;}
+            i--;
+            continue;
+          }
           finish();
           word=ch; answer=''; state='en';
         }else answer+=ch;
@@ -6301,7 +6365,7 @@ body.light #vaEditRange{background:#f8fafc;border-color:#dbe3ec}
     const notice=$('noticeContent');
     if(notice&&!notice.textContent.includes('Vr_a7.1.12')){
       const item=document.createElement('div');
-      item.innerHTML='<div>・Vr_a7.1.12 英語→日本語の大量貼り付けを自動分割する一括登録と、1〜5 / 6〜10のような編集範囲表示を追加</div>';
+      item.innerHTML='<div>・Vr_a7.1.16 一括登録で意味欄に含まれる英語（例：findの過去形）を別単語と誤認する問題を修正</div><div>・Vr_a7.1.12 英語→日本語の大量貼り付けを自動分割する一括登録と、1〜5 / 6〜10のような編集範囲表示を追加</div>';
       notice.insertBefore(item,notice.firstChild);
     }
   }
@@ -6461,7 +6525,7 @@ body.light .meaningColorSameBtn.active{
 <script id="va715-color-hold-fix">
 (function(){
   /*
-    Vr_a7.1.15
+    Vr_a7.1.16
     旧処理 applySavedMeaningColorsToRows() が1秒ごとに保存済み色を
     編集中の行へ書き戻していたため、未保存の色変更が元に戻る問題を停止。
     行の初期色は addRow(card) の c.answerColor から既に復元されるため、
@@ -6471,12 +6535,12 @@ body.light .meaningColorSameBtn.active{
 
   function bumpVersion(){
     const v=document.getElementById('homeVersionText');
-    if(v)v.textContent='Vr_a7.1.15';
+    if(v)v.textContent='Vr_a7.1.16';
     const notice=document.getElementById('noticeContent');
-    if(notice && !notice.textContent.includes('Vr_a7.1.15')){
+    if(notice && !notice.textContent.includes('Vr_a7.1.16')){
       const item=document.createElement('div');
       item.className='noticeItem';
-      item.innerHTML='<div>・Vr_a7.1.15 意味色を変更した直後に、保存前の古い色へ勝手に戻る不具合を修正</div>';
+      item.innerHTML='<div>・Vr_a7.1.16 意味色を変更した直後に、保存前の古い色へ勝手に戻る不具合を修正</div>';
       notice.insertBefore(item,notice.firstChild);
     }
   }
